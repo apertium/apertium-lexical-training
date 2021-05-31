@@ -1,5 +1,4 @@
 # configuration for lexical training
-# Note: pass absolute paths
 
 # corpus name
 CORPUS = "europarl-v7"

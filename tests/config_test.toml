@@ -10,16 +10,16 @@ SL = "eng"
 TL = "spa"
 
 # source corpus
-CORPUS_SL = "europarl-v7.eng-spa.eng"
+CORPUS_SL = "../europarl-v7.eng-spa.eng"
 
 # target corpus
-CORPUS_TL = "europarl-v7.eng-spa.spa"
+CORPUS_TL = "../europarl-v7.eng-spa.spa"
 
 # apertium-lex-tools scripts
-LEX_TOOLS = "../apertium-lex-tools/scripts"
+LEX_TOOLS = "../../apertium-lex-tools/scripts"
 
 # fast align build folder
-FAST_ALIGN = "coding_challenges/fast_align/build"
+FAST_ALIGN = "../coding_challenges/fast_align/build"
 
 # apertium language data
-LANG_DATA = "coding_challenges/apertium-eng-spa"
+LANG_DATA = "../coding_challenges/apertium-eng-spa"
