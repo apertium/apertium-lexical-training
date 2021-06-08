@@ -20,6 +20,8 @@ def main(argc, argv):
     print("---------------------")
 
     for key in config:
+        if key == 'TRAINING_LINES':
+            continue
         config[key]+="abc"
 
     if os.fork() == 0:
@@ -85,12 +87,35 @@ def main(argc, argv):
     config = parse(config_toml)
     config_file.close()
 
-    print("Test 3 : correct installations")
+    print("Test 3 : wrong TRAINING_LINES")
+    print("---------------------")
+
+    for value in ['abc', 1.00, 1e237892, "abc"]:
+        config['TRAINING_LINES'] = value
+        if os.fork() == 0:
+            with open('check_config_test.toml', 'w') as test_file:
+                test_file.write(dumps(config))
+            check_config('check_config_test.toml')
+            exit(0)
+
+        _, _ = os.wait()
+
+    # Test 4
+    config_file = open('config_test.toml', 'r')
+    config_toml = config_file.read()
+    config = parse(config_toml)
+    config_file.close()
+
+    print("Test 4 : correct installations")
     print("-------------------------------")
 
-    with open('check_config_test.toml', 'w') as test_file:
-        test_file.write(dumps(config))
-    check_config('check_config_test.toml')
+    if os.fork() == 0:
+        with open('check_config_test.toml', 'w') as test_file:
+            test_file.write(dumps(config))
+        check_config('check_config_test.toml')
+        exit(0)
+
+        _, _ = os.wait()
 
     os.remove('check_config_test.toml')
 

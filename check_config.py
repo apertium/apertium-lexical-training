@@ -97,6 +97,10 @@ def check_config(filename='config.toml'):
     if not yasmet_present:
         print("yasmet is either not installed or not added to path, see", yasmet_url, '\n')
         misconfigured = True
+    
+    if not isinstance(config['TRAINING_LINES'], int):
+        print("'"+str(config['TRAINING_LINES'])+"'(TRAINING_LINES)", "is not an integer", '\n')
+        misconfigured = True
 
     if misconfigured:
         exit(1)
