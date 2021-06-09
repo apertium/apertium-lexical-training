@@ -1,21 +1,18 @@
 # removes lines above and below the empty lines including the empty lines in each corpus
-# removes lines containing only ° and *
+# removes lines containing only '°', '*' or '.'
 # stripping trailing and leading spaces
 
 
 import sys
 
 
-def main(argc, argv):
-    if argc != 3:
-        print('usage: clean_corpus.py <corpus 1> <corpus 2>')
-        exit(-1)
+def clean_corpus(corpus1, corpus2):
 
     lines1 = []
     lines2 = []
     lines_to_remove = set()
 
-    with open(argv[1], 'r+') as l1, open(argv[2], 'r+') as l2:
+    with open(corpus1, 'r+') as l1, open(corpus2, 'r+') as l2:
         lines1 = l1.readlines()
         lines2 = l2.readlines()
         assert len(lines1) == len(lines2)
@@ -32,7 +29,7 @@ def main(argc, argv):
                 lines_to_remove.add(i)
             # print(lines1, lines2)
             
-        print(lines_to_remove)
+        # print(lines_to_remove)
 
         l1.seek(0)
         # l1.write(''.join(lines1))
@@ -43,7 +40,7 @@ def main(argc, argv):
         l2.write('')
         l2.truncate()
 
-    with open(argv[1], 'a') as l1, open(argv[2], 'a') as l2:
+    with open(corpus1, 'a') as l1, open(corpus2, 'a') as l2:
         lines_to_keep = set()
         lines_to_keep.update([i for i in range(len(lines1))])
         lines_to_keep = lines_to_keep - lines_to_remove
@@ -57,4 +54,7 @@ def main(argc, argv):
         l2.truncate()
 
 if __name__ == '__main__':
-    main(len(sys.argv), sys.argv)
+    if len(sys.argv) != 3:
+        print('usage: clean_corpus.py <corpus 1> <corpus 2>')
+        exit(1)
+    clean_corpus(sys.argv[1], sys.argv[2])

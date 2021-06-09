@@ -115,7 +115,7 @@ def main(argc, argv):
         check_config('check_config_test.toml')
         exit(0)
 
-        _, _ = os.wait()
+    _, _ = os.wait()
 
     os.remove('check_config_test.toml')
 

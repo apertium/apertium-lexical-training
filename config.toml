@@ -25,4 +25,4 @@ FAST_ALIGN = "/home/vivek/Documents/FOSS/apertium/user-friendly-lexical-training
 LANG_DATA = "/home/vivek/Documents/FOSS/apertium/user-friendly-lexical-training/coding_challenges/apertium-eng-spa"
 
 # number of lines to be trained on (do not enclose in quotes)
-TRAINING_LINES = 100000
+TRAINING_LINES = 1953934
