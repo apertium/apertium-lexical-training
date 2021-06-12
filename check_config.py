@@ -52,15 +52,15 @@ def check_config(filename='config.toml'):
                         "provide a valid directory or \nto install, follow", lex_tools_url, '\n')
             misconfigured = True
 
-    if not os.path.isdir(config['FAST_ALIGN']):
-        print("'"+config['FAST_ALIGN']+"'(FAST_ALIGN)", "is not a directory, provide"+ \
-                    " a valid directory or \nto install, follow", fast_align_url, '\n')
+    if not os.path.isfile(config['FAST_ALIGN']):
+        print("'"+config['FAST_ALIGN']+"'(FAST_ALIGN)", "is not a file, provide"+ \
+                    " a valid executable or \nto install, follow", fast_align_url, '\n')
         misconfigured = True
-    else:
-        if 'fast_align' not in os.listdir(config['FAST_ALIGN']):
-            print("fast_align is not present in", "'"+config['FAST_ALIGN']+"'(FAST_ALIGN),", \
-                            "provide a valid directory or \nto install, follow", fast_align_url, '\n')
-            misconfigured = True
+    # else:
+    #     if 'fast_align' not in os.listdir(config['FAST_ALIGN']):
+    #         print("fast_align is not present in", "'"+config['FAST_ALIGN']+"'(FAST_ALIGN),", \
+    #                         "provide a valid directory or \nto install, follow", fast_align_url, '\n')
+    #         misconfigured = True
     
     if not os.path.isdir(config['LANG_DATA']):
         print("'"+config['LANG_DATA']+"'(LANG_DATA)", "is not a directory, provide a valid "+ \

@@ -56,8 +56,8 @@ def main(argc, argv):
     if os.path.isfile(os.path.join(config['LEX_TOOLS'], 'process-tagger-output')):
         shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'), os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'))
 
-    if os.path.isfile(os.path.join(config['FAST_ALIGN'], 'fast_align')):
-        shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'), os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'))
+    # if os.path.isfile(os.path.join(config['FAST_ALIGN'], 'fast_align')):
+    #     shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'), os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'))
 
     if os.fork() == 0:
         with open('check_config_test.toml', 'w') as test_file:
@@ -69,7 +69,7 @@ def main(argc, argv):
 
     shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'), os.path.join(config['LEX_TOOLS'], 'process-tagger-output'))
 
-    shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'), os.path.join(config['FAST_ALIGN'], 'fast_align'))
+    # shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'), os.path.join(config['FAST_ALIGN'], 'fast_align'))
 
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, 'apertium'+'abc')):
