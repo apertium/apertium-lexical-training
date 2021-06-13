@@ -1,6 +1,7 @@
 # lexical training script
 import os
 from subprocess import Popen, PIPE, call
+from typing import List
 from check_config import check_config
 from clean_corpus import clean_corpus
 
@@ -140,3 +141,27 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def pipe(cmds, firstin, lastout, stderr):
+    """Open a list of commands as a simple shell pipe, using the same stderr
+    for all commands.
+    Returns None if the command list is empty.
+    Example usage:
+    >>> cmds = [['yes', 'olleh'], ['head', '-2'], ['rev']]
+    >>> with open('/tmp/foo', 'w') as outf:
+        p = pipe(cmds, None, outf, sys.stderr)
+        retcode = p.wait()
+    >>> print(open('/tmp/foo', 'r').read())
+    hello
+    hello
+    """
+    if cmds == []:
+        return
+    procs = []                  # type: List[Popen]
+    for i in range(len(cmds)):
+        cmd = cmds[i]
+        inp = procs[i-1].stdout if i > 0 else firstin
+        outp = PIPE if i+1 < len(cmds) else lastout
+        procs.append(Popen(cmd, stdin=inp, stdout=outp, stderr=stderr))
+    return procs[-1]
