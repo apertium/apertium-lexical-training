@@ -62,13 +62,19 @@ def pipe(cmds, firstin, lastout, stderr):
 
 def training(config, cache_dir, log):
     # file names
-    sl_tagged = cache_dir+'/'+config['CORPUS']+'.tagged.'+config['SL']
-    tl_tagged = cache_dir+'/'+config['CORPUS']+'.tagged.'+config['TL']
-    lines = cache_dir+'/'+config['CORPUS']+'.lines'
-    tagged_merged = cache_dir+'/' + \
-        config['CORPUS']+'.tagged-merged.'+config['SL']+'-'+config['TL']
-    alignment = cache_dir+'/'+config['CORPUS'] + \
-        '.align.'+config['SL']+'-'+config['TL']
+    sl_tagged = os.path.join(
+        cache_dir, config['CORPUS']+'.tagged.'+config['SL'])
+    tl_tagged = os.path.join(
+        cache_dir, config['CORPUS']+'.tagged.'+config['TL'])
+    lines = os.path.join(cache_dir, config['CORPUS']+'.lines')
+    tagged_merged = os.path.join(
+        cache_dir, config['CORPUS']+'.tagged-merged.'+config['SL']+'-'+config['TL'])
+    alignment = os.path.join(cache_dir, config['CORPUS'] +
+                             '.align.'+config['SL']+'-'+config['TL'])
+    clean_biltrans = os.path.join(
+        cache_dir, config['CORPUS']+'.clean_biltrans.'+config['SL']+'-'+config['TL'])
+    phrasetable = os.path.join(
+        cache_dir, config['CORPUS']+'.phrasetable.'+config['SL']+'-'+config['TL'])
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = min(config['TRAINING_LINES'],
@@ -102,7 +108,8 @@ def training(config, cache_dir, log):
     with open(lines, 'w+') as f0:
         call(['seq', '1', str(training_lines)],
              stdout=f0, stderr=log)
-        clean_tagged = cache_dir+'/'+config['CORPUS']+'.clean_tagged'
+        clean_tagged = os.path.join(
+            cache_dir, config['CORPUS']+'.clean_tagged')
         with open(clean_tagged, 'w+') as f1:
             cmds = [['paste', lines, sl_tagged, tl_tagged],
                     ['grep', '<*\t*<']]
@@ -133,6 +140,40 @@ def training(config, cache_dir, log):
             call([config['FAST_ALIGN'], '-i', tagged_merged, '-d',
                   '-o', '-v'], stdout=f2, stderr=log)
 
+    with open(sl_tagged, 'r+') as f:
+        data = f.read()
+        f.seek(0)
+        f.write(data.replace('~', ' '))
+    with open(tl_tagged, 'r+') as f:
+        data = f.read()
+        f.seek(0)
+        f.write(data.replace('~', ' '))
+
+    # temp files
+    tmp1 = 'tmp1'
+    tmp2 = 'tmp2'
+
+    # phrasetable
+    with open(tmp1, 'w+') as f1, open(tmp2, 'w+') as f2:
+        sl_tl_autobil = config['SL'] + '-' + config['TL'] + '.autobil.bin'
+        tl_sl_autobil = config['TL'] + '-' + config['SL'] + '.autobil.bin'
+        with open(tl_tagged, 'r') as f:
+            call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+                  os.path.join(config['LANG_DATA'], tl_sl_autobil)], stdin=f, stdout=f1, stderr=log)
+        with open(sl_tagged, 'r') as f:
+            call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+                  os.path.join(config['LANG_DATA'], sl_tl_autobil)], stdin=f, stdout=f2, stderr=log)
+            f.seek(0)
+            with open(clean_biltrans, 'w') as f0:
+                call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+                      os.path.join(config['LANG_DATA'], sl_tl_autobil)], stdin=f, stdout=f0, stderr=log)
+        cmds = [['paste', tmp1, tmp2, alignment], ['sed', 's/\t/ ||| /g']]
+        with open(phrasetable, 'w') as f:
+            pipe(cmds, None, f, log).wait()
+
+    os.remove(tmp1)
+    os.remove(tmp2)
+
 
 def main():
     print("validating configuration....")
@@ -143,7 +184,7 @@ def main():
     # clean_corpus(config['CORPUS_SL'], config['CORPUS_TL'])
 
     cache_dir = "cache-"+config['SL']+"-"+config['TL']
-    log = cache_dir+'/'+'training.log'
+    log = os.path.join(cache_dir, 'training.log')
 
     # the directory where all the intermediary outputs are stored
     if not os.path.isdir(cache_dir):
