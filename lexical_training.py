@@ -1,8 +1,12 @@
 # lexical training script
 import os
+import sys
+
 from subprocess import Popen, PIPE, call
 from check_config import check_config
 from clean_corpus import clean_corpus
+from importlib import import_module
+from contextlib import redirect_stdout, redirect_stderr
 
 
 def query(question, default="yes"):
@@ -75,6 +79,10 @@ def training(config, cache_dir, log):
         cache_dir, config['CORPUS']+'.clean_biltrans.'+config['SL']+'-'+config['TL'])
     phrasetable = os.path.join(
         cache_dir, config['CORPUS']+'.phrasetable.'+config['SL']+'-'+config['TL'])
+    candidates = os.path.join(
+        cache_dir, config['CORPUS']+'.candidates.'+config['SL']+'-'+config['TL'])
+    freq_lex = os.path.join(
+        cache_dir, config['CORPUS']+'.lex.'+config['SL']+'-'+config['TL'])
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = min(config['TRAINING_LINES'],
@@ -174,10 +182,41 @@ def training(config, cache_dir, log):
     os.remove(tmp1)
     os.remove(tmp2)
 
+    # extract sentences
+    mod = import_module('extract-sentences')
+    extract_sentences = getattr(mod, 'extract_sentences')
+    with open(candidates, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        extract_sentences(phrasetable, clean_biltrans)
+
+    # extract freq lexicon
+    mod = import_module('extract-freq-lexicon')
+    extract_freq_lexicon = getattr(mod, 'extract_freq_lexicon')
+    with open(freq_lex, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        extract_freq_lexicon(candidates)
+
+    # count patterns
+    mod = import_module('ngram-count-patterns-maxent2')
+    ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
+
+    # merge ngrams lambdas
+    mod = import_module('merge-ngrams-lambdas')
+    merge_ngrams_lambdas = getattr(mod, 'merge_ngrams_lambdas')
+
+    # lambdas to rules
+    mod = import_module('lambdas-to-rules')
+    lambdas_to_rules = getattr(mod, 'lambdas_to_rules')
+
+    # ngrams to rules
+    mod = import_module('ngrams-to-rules-me')
+    ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
+
 
 def main():
     print("validating configuration....")
     config = check_config()
+
+    # adding lex scripts to path
+    sys.path.insert(1, config['LEX_TOOLS'])
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
     print("cleaning corpus....")
