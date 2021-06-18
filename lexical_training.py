@@ -65,6 +65,9 @@ def pipe(cmds, firstin, lastout, stderr):
 
 
 def training(config, cache_dir, log):
+
+    MIN = 1
+
     # file names
     sl_tagged = os.path.join(
         cache_dir, config['CORPUS']+'.tagged.'+config['SL'])
@@ -83,6 +86,19 @@ def training(config, cache_dir, log):
         cache_dir, config['CORPUS']+'.candidates.'+config['SL']+'-'+config['TL'])
     freq_lex = os.path.join(
         cache_dir, config['CORPUS']+'.lex.'+config['SL']+'-'+config['TL'])
+    ngrams = os.path.join(
+        cache_dir, config['CORPUS']+'ngrams')
+    events = os.path.join(
+        cache_dir, config['CORPUS']+'events')
+    events_trimmed = os.path.join(
+        cache_dir, config['CORPUS']+'events.trimmed')
+    lambdas = os.path.join(
+        cache_dir, config['CORPUS']+'lambdas')
+    rules_all = os.path.join(
+        cache_dir, config['CORPUS']+'rules_all.txt')
+    ngrams_all = os.path.join(
+        cache_dir, config['CORPUS']+'ngrams_all.txt')
+    rules = config['SL']+'-'+config['TL']+'.ngrams-lm-'+str(MIN)+'.xml'
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = min(config['TRAINING_LINES'],
@@ -197,18 +213,36 @@ def training(config, cache_dir, log):
     # count patterns
     mod = import_module('ngram-count-patterns-maxent2')
     ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
+    with open(ngrams, 'w') as f1, open(events, 'w'), redirect_stdout(f2), redirect_stderr(f1):
+        ngram_count_patterns(freq_lex, candidates)
+
+    with open(events, 'r') as f1, open(events_trimmed, 'w') as f2:
+        call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'], stdin=f1, stdout=f2)
+
+    with open(events_trimmed, 'r') as f:
+        cut - f1 | sort - u | sed 's/\([\*\^\$]\)/\\\\\1/g' > tmp.sl
+        cmds = [['cut', '-f', '1'], ['sort', '-u'],
+                ['sed', 's/\([\*\^\$]\)/\\\\\1/g']]
+        with open('tmp.sl', 'w') as f0:
+            pipe(cmds, f, f0, log).wait()
 
     # merge ngrams lambdas
     mod = import_module('merge-ngrams-lambdas')
     merge_ngrams_lambdas = getattr(mod, 'merge_ngrams_lambdas')
+    with open(rules_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        merge_ngrams_lambdas(ngrams, lambdas)
 
     # lambdas to rules
     mod = import_module('lambdas-to-rules')
     lambdas_to_rules = getattr(mod, 'lambdas_to_rules')
+    with open(ngrams_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        lambdas_to_rules(freq_lex, rules_all)
 
     # ngrams to rules
     mod = import_module('ngrams-to-rules-me')
     ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
+    with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        ngrams_to_rules(ngrams_all)
 
 
 def main():
