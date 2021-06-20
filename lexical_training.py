@@ -220,11 +220,28 @@ def training(config, cache_dir, log):
         call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'], stdin=f1, stdout=f2)
 
     with open(events_trimmed, 'r') as f:
-        cut - f1 | sort - u | sed 's/\([\*\^\$]\)/\\\\\1/g' > tmp.sl
         cmds = [['cut', '-f', '1'], ['sort', '-u'],
                 ['sed', 's/\([\*\^\$]\)/\\\\\1/g']]
         with open('tmp.sl', 'w') as f0:
             pipe(cmds, f, f0, log).wait()
+
+    # extracting lambdas with yasmet
+    with open('tmp.sl', 'r') as f:
+        temp_lambdas = f.read()
+        for l in temp_lambdas.split('\n'):
+            with open(events_trimmed, 'r') as f0, open('tmp.yasmet', 'a+') as f1:
+                cmds = [['grep', '^'+l], ['cut', '-f', '2'], ['head', '-1']]
+                pipe(cmds, f0, f1, log).wait()
+                cmds = [['grep', '^'+l], ['cut', '-f', '3']]
+                f0.seek(0)
+                pipe(cmds, f0, f1, log).wait()
+                f1.seek(0)
+                with open(lambdas, 'a') as f2:
+                    cmds = [
+                        ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', 's/^/$i\t/g']]
+                    pipe(cmds, f1, f2, log)
+            os.remove('tmp.yasmet')
+    os.remove('tmp.sl')
 
     # merge ngrams lambdas
     mod = import_module('merge-ngrams-lambdas')
