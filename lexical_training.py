@@ -87,17 +87,17 @@ def training(config, cache_dir, log):
     freq_lex = os.path.join(
         cache_dir, config['CORPUS']+'.lex.'+config['SL']+'-'+config['TL'])
     ngrams = os.path.join(
-        cache_dir, config['CORPUS']+'ngrams')
+        cache_dir, 'ngrams')
     events = os.path.join(
-        cache_dir, config['CORPUS']+'events')
+        cache_dir, 'events')
     events_trimmed = os.path.join(
-        cache_dir, config['CORPUS']+'events.trimmed')
+        cache_dir, 'events.trimmed')
     lambdas = os.path.join(
-        cache_dir, config['CORPUS']+'lambdas')
+        cache_dir, 'lambdas')
     rules_all = os.path.join(
-        cache_dir, config['CORPUS']+'rules_all.txt')
+        cache_dir, 'rules_all.txt')
     ngrams_all = os.path.join(
-        cache_dir, config['CORPUS']+'ngrams_all.txt')
+        cache_dir, 'ngrams_all.txt')
     rules = config['SL']+'-'+config['TL']+'.ngrams-lm-'+str(MIN)+'.xml'
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
@@ -213,34 +213,43 @@ def training(config, cache_dir, log):
     # count patterns
     mod = import_module('ngram-count-patterns-maxent2')
     ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
-    with open(ngrams, 'w') as f1, open(events, 'w'), redirect_stdout(f2), redirect_stderr(f1):
+    with open(ngrams, 'w') as f1, open(events, 'w') as f2, redirect_stdout(f2), redirect_stderr(f1):
         ngram_count_patterns(freq_lex, candidates)
 
+    # print("hello")
     with open(events, 'r') as f1, open(events_trimmed, 'w') as f2:
-        call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'], stdin=f1, stdout=f2)
+        call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'],
+             stdin=f1, stdout=f2, stderr=log)
+    # print("world")
 
     with open(events_trimmed, 'r') as f:
-        cmds = [['cut', '-f', '1'], ['sort', '-u'],
-                ['sed', 's/\([\*\^\$]\)/\\\\\1/g']]
+        cmds = [['cut', '-f', '1'], ['sort', '-u']]  # ,
+        # ['sed', 's/[\*\^\$]/\\\\\1/g']]
         with open('tmp.sl', 'w') as f0:
             pipe(cmds, f, f0, log).wait()
 
     # extracting lambdas with yasmet
     with open('tmp.sl', 'r') as f:
         temp_lambdas = f.read()
-        for l in temp_lambdas.split('\n'):
-            with open(events_trimmed, 'r') as f0, open('tmp.yasmet', 'a+') as f1:
+        with open(events_trimmed, 'r') as f0, open('tmp.yasmet', 'a+') as f1, open(lambdas, 'a') as f2:
+            f2.truncate(0)
+            for l in temp_lambdas.split('\n')[:-1]:
+                f0.seek(0)
+                f1.truncate(0)
+                # print(l)
                 cmds = [['grep', '^'+l], ['cut', '-f', '2'], ['head', '-1']]
                 pipe(cmds, f0, f1, log).wait()
-                cmds = [['grep', '^'+l], ['cut', '-f', '3']]
                 f0.seek(0)
+
+                cmds = [['grep', '^'+l], ['cut', '-f', '3']]
                 pipe(cmds, f0, f1, log).wait()
                 f1.seek(0)
-                with open(lambdas, 'a') as f2:
-                    cmds = [
-                        ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', 's/^/$i\t/g']]
-                    pipe(cmds, f1, f2, log)
-            os.remove('tmp.yasmet')
+
+                cmds = [
+                    ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', 's/^/'+l+'\t/g']]
+                pipe(cmds, f1, f2, log).wait()
+
+    os.remove('tmp.yasmet')
     os.remove('tmp.sl')
 
     # merge ngrams lambdas
