@@ -1,6 +1,7 @@
 # lexical training script
 import os
 import sys
+import shutil
 
 from subprocess import Popen, PIPE, call
 from check_config import check_config
@@ -112,7 +113,7 @@ def training(config, cache_dir, log):
              config['SL']+'-'+config['TL']+'-tagger'],
             ['sed', 's/ \+/ /g'], ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
-        pipe(cmds, inp, outp, log)
+        pipe(cmds, inp, outp, log).wait()
 
     # c2 = ['apertium-destxt']
     # p2 = Popen(c2, stdin=p1.stdout, stdout=PIPE, stderr=training_log)
@@ -137,15 +138,16 @@ def training(config, cache_dir, log):
         with open(clean_tagged, 'w+') as f1:
             cmds = [['paste', lines, sl_tagged, tl_tagged],
                     ['grep', '<*\t*<']]
-            pipe(cmds, None, f1, log)
+            pipe(cmds, None, f1, log).wait()
 
+            # f1.seek(0)
             call(['cut', '-f', '1'], stdin=f1, stdout=f0, stderr=log)
 
             f1.seek(0)
             with open(sl_tagged, 'w') as f2:
                 cmds = [['cut', '-f', '2'], ['sed', 's/ /~/g'],
                         ['sed', 's/\$[^\^]*/$ /g']]
-                pipe(cmds, f1, f2, log)
+                pipe(cmds, f1, f2, log).wait()
 
             f1.seek(0)
             with open(tl_tagged, 'w') as f2:
@@ -160,9 +162,9 @@ def training(config, cache_dir, log):
         with open(os.devnull, 'r') as f1:
             call(['paste', '-d', '||| ', tl_tagged, '-', '-', '-',
                   sl_tagged], stdin=f1, stdout=f, stderr=log)
-        with open(alignment, 'w') as f2:
-            call([config['FAST_ALIGN'], '-i', tagged_merged, '-d',
-                  '-o', '-v'], stdout=f2, stderr=log)
+    with open(alignment, 'w') as f:
+        call([config['FAST_ALIGN'], '-i', tagged_merged, '-d',
+              '-o', '-v'], stdout=f, stderr=log)
 
     with open(sl_tagged, 'r+') as f:
         data = f.read()
@@ -178,7 +180,7 @@ def training(config, cache_dir, log):
     tmp2 = 'tmp2'
 
     # phrasetable
-    with open(tmp1, 'w+') as f1, open(tmp2, 'w+') as f2:
+    with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
         sl_tl_autobil = config['SL'] + '-' + config['TL'] + '.autobil.bin'
         tl_sl_autobil = config['TL'] + '-' + config['SL'] + '.autobil.bin'
         with open(tl_tagged, 'r') as f:
@@ -286,15 +288,13 @@ def main():
     log = os.path.join(cache_dir, 'training.log')
 
     # the directory where all the intermediary outputs are stored
-    if not os.path.isdir(cache_dir):
-        os.mkdir(cache_dir)
-    else:
+    if os.path.isdir(cache_dir):
         if not query("Do you want to overwrite the files in "+"'"+cache_dir+"'"):
             print("remove", cache_dir, "and re-run lexical_training.py")
             exit(1)
+        shutil.rmtree(cache_dir)
 
-    if os.path.isfile(log):
-        os.remove(log)
+    os.mkdir(cache_dir)
 
     with open(log, 'a') as log_file:
         training(config, cache_dir, log_file)
