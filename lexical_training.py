@@ -111,7 +111,7 @@ def training(config, cache_dir, log):
     cmds = [['head', '-n', str(training_lines)],
             ['apertium', '-d', config['LANG_DATA'],
              config['SL']+'-'+config['TL']+'-tagger'],
-            ['sed', 's/ \+/ /g'], ['apertium-pretransfer']]
+            ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
 
@@ -122,7 +122,7 @@ def training(config, cache_dir, log):
     cmds = [['head', '-n', str(training_lines)],
             ['apertium', '-d', config['LANG_DATA'],
              config['TL']+'-'+config['SL']+'-tagger'],
-            ['sed', 's/ \+/ /g'], ['apertium-pretransfer']]
+            ['apertium-pretransfer']]
     with open(config['CORPUS_TL']) as inp, open(tl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
 
@@ -130,30 +130,32 @@ def training(config, cache_dir, log):
     # p2 = Popen(c2, stdin=p1.stdout, stdout=PIPE, stderr=training_log)
 
     # removing lines with no analyses
-    with open(lines, 'w+') as f0:
+    with open(lines, 'w') as f:
         call(['seq', '1', str(training_lines)],
-             stdout=f0, stderr=log)
-        clean_tagged = os.path.join(
-            cache_dir, config['CORPUS']+'.clean_tagged')
-        with open(clean_tagged, 'w+') as f1:
-            cmds = [['paste', lines, sl_tagged, tl_tagged],
-                    ['grep', '<*\t*<']]
-            pipe(cmds, None, f1, log).wait()
+             stdout=f, stderr=log)
 
-            # f1.seek(0)
-            call(['cut', '-f', '1'], stdin=f1, stdout=f0, stderr=log)
+    clean_tagged = os.path.join(
+        cache_dir, config['CORPUS']+'.clean_tagged')
+    with open(clean_tagged, 'w') as f1:
+        cmds = [['paste', lines, sl_tagged, tl_tagged],
+                ['grep', '<*\t*<']]
+        pipe(cmds, None, f1, log).wait()
 
-            f1.seek(0)
-            with open(sl_tagged, 'w') as f2:
-                cmds = [['cut', '-f', '2'], ['sed', 's/ /~/g'],
-                        ['sed', 's/\$[^\^]*/$ /g']]
-                pipe(cmds, f1, f2, log).wait()
+    with open(clean_tagged, 'r') as f0:
+        with open(lines, 'w') as f1:
+            call(['cut', '-f', '1'], stdin=f0, stdout=f1, stderr=log)
 
-            f1.seek(0)
-            with open(tl_tagged, 'w') as f2:
-                cmds = [['cut', '-f', '3'], ['sed', 's/ /~/g'],
-                        ['sed', 's/\$[^\^]*/$ /g']]
-                pipe(cmds, f1, f2, log).wait()
+        f0.seek(0)
+        with open(sl_tagged, 'w') as f2:
+            cmds = [['cut', '-f', '2'], ['sed', 's/ /~/g'],
+                    ['sed', 's/\$[^\^]*/$ /g']]
+            pipe(cmds, f0, f2, log).wait()
+
+        f0.seek(0)
+        with open(tl_tagged, 'w') as f2:
+            cmds = [['cut', '-f', '3'], ['sed', 's/ /~/g'],
+                    ['sed', 's/\$[^\^]*/$ /g']]
+            pipe(cmds, f0, f2, log).wait()
 
     os.remove(clean_tagged)
 
@@ -162,6 +164,7 @@ def training(config, cache_dir, log):
         with open(os.devnull, 'r') as f1:
             call(['paste', '-d', '||| ', tl_tagged, '-', '-', '-',
                   sl_tagged], stdin=f1, stdout=f, stderr=log)
+
     with open(alignment, 'w') as f:
         call([config['FAST_ALIGN'], '-i', tagged_merged, '-d',
               '-o', '-v'], stdout=f, stderr=log)
@@ -170,6 +173,7 @@ def training(config, cache_dir, log):
         data = f.read()
         f.seek(0)
         f.write(data.replace('~', ' '))
+
     with open(tl_tagged, 'r+') as f:
         data = f.read()
         f.seek(0)
