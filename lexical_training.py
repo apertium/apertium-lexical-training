@@ -99,11 +99,16 @@ def training(config, cache_dir, log):
         cache_dir, 'rules_all.txt')
     ngrams_all = os.path.join(
         cache_dir, 'ngrams_all.txt')
-    rules = config['SL']+'-'+config['TL']+'.ngrams-lm-'+str(MIN)+'.xml'
+    rules = config['CORPUS']+"-"+config['SL']+'-' + \
+        config['TL']+'.ngrams-lm-'+str(MIN)+'.xml'
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
-        training_lines = min(config['TRAINING_LINES'],
-                             len(corpus_sl.readlines()))
+        training_lines = len(corpus_sl.readlines())
+        if config['TRAINING_LINES'] > training_lines:
+            print('Warning:', str(config['TRAINING_LINES']) +
+                  '(TRAINING_LINES) >', training_lines)
+        else:
+            training_lines = config['TRAINING_LINES']
 
     print('loading', training_lines, 'lines from the corpora')
 
@@ -288,7 +293,7 @@ def main():
     print("cleaning corpus....")
     # clean_corpus(config['CORPUS_SL'], config['CORPUS_TL'])
 
-    cache_dir = "cache-"+config['SL']+"-"+config['TL']
+    cache_dir = "cache-"+config['CORPUS']+"-"+config['SL']+"-"+config['TL']
     log = os.path.join(cache_dir, 'training.log')
 
     # the directory where all the intermediary outputs are stored
