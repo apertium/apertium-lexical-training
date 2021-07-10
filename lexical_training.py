@@ -113,26 +113,20 @@ def training(config, cache_dir, log):
     print('loading', training_lines, 'lines from the corpora')
 
     # tagging the source side corpus
-    cmds = [['head', '-n', str(training_lines)],
-            ['apertium', '-d', config['LANG_DATA'],
+    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
+            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
              config['SL']+'-'+config['TL']+'-tagger'],
             ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
 
-    # c2 = ['apertium-destxt']
-    # p2 = Popen(c2, stdin=p1.stdout, stdout=PIPE, stderr=training_log)
-
     # tagging the target side corpus
-    cmds = [['head', '-n', str(training_lines)],
-            ['apertium', '-d', config['LANG_DATA'],
+    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
+            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
              config['TL']+'-'+config['SL']+'-tagger'],
             ['apertium-pretransfer']]
     with open(config['CORPUS_TL']) as inp, open(tl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
-
-    # c2 = ['apertium-destxt']
-    # p2 = Popen(c2, stdin=p1.stdout, stdout=PIPE, stderr=training_log)
 
     # removing lines with no analyses
     with open(lines, 'w') as f:
@@ -152,20 +146,20 @@ def training(config, cache_dir, log):
 
         f0.seek(0)
         with open(sl_tagged, 'w') as f2:
-            cmds = [['cut', '-f', '2'], ['sed', 's/ /~/g'],
+            cmds = [['cut', '-f', '2'], ['sed', 's/ /~~/g'],
                     ['sed', 's/\$[^\^]*/$ /g']]
             pipe(cmds, f0, f2, log).wait()
 
         f0.seek(0)
         with open(tl_tagged, 'w') as f2:
-            cmds = [['cut', '-f', '3'], ['sed', 's/ /~/g'],
+            cmds = [['cut', '-f', '3'], ['sed', 's/ /~~/g'],
                     ['sed', 's/\$[^\^]*/$ /g']]
             pipe(cmds, f0, f2, log).wait()
 
     os.remove(clean_tagged)
 
     # aligning the parallel corpus
-    with open(tagged_merged, 'w+') as f:
+    with open(tagged_merged, 'w') as f:
         with open(os.devnull, 'r') as f1:
             call(['paste', '-d', '||| ', tl_tagged, '-', '-', '-',
                   sl_tagged], stdin=f1, stdout=f, stderr=log)
@@ -177,12 +171,12 @@ def training(config, cache_dir, log):
     with open(sl_tagged, 'r+') as f:
         data = f.read()
         f.seek(0)
-        f.write(data.replace('~', ' '))
+        f.write(data.replace('~~', ' '))
 
     with open(tl_tagged, 'r+') as f:
         data = f.read()
         f.seek(0)
-        f.write(data.replace('~', ' '))
+        f.write(data.replace('~~', ' '))
 
     # temp files
     tmp1 = 'tmp1'
@@ -202,9 +196,10 @@ def training(config, cache_dir, log):
             with open(clean_biltrans, 'w') as f0:
                 call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
                       os.path.join(config['LANG_DATA'], sl_tl_autobil)], stdin=f, stdout=f0, stderr=log)
-        cmds = [['paste', tmp1, tmp2, alignment], ['sed', 's/\t/ ||| /g']]
-        with open(phrasetable, 'w') as f:
-            pipe(cmds, None, f, log).wait()
+
+    cmds = [['paste', tmp1, tmp2, alignment], ['sed', 's/\t/ ||| /g']]
+    with open(phrasetable, 'w') as f:
+        pipe(cmds, None, f, log).wait()
 
     os.remove(tmp1)
     os.remove(tmp2)
