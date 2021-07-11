@@ -9,7 +9,7 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 - [parallel corpus](https://wiki.apertium.org/wiki/Corpora)
 - [apertium](https://wiki.apertium.org/wiki/Installation)
 - [fast_align](https://github.com/clab/fast_align)
-- [apertium-lex-tools](https://wiki.apertium.org/wiki/Install_Apertium_core_by_compiling) (with yasmet and scripts)
+- [apertium-lex-tools](https://wiki.apertium.org/wiki/Install_Apertium_core_by_compiling) (if not installed already)
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
 
 ## Installation steps
