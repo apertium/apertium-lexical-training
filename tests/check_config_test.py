@@ -1,4 +1,5 @@
 # tests check_config.py
+from check_config import check_config
 import sys
 from tomlkit import parse, dumps
 import os
@@ -6,10 +7,9 @@ import shutil
 
 sys.path.append('../')
 
-from check_config import check_config
 
 def main(argc, argv):
-    
+
     # Test 1
     config_file = open('config_test.toml', 'r')
     config_toml = config_file.read()
@@ -22,7 +22,7 @@ def main(argc, argv):
     for key in config:
         if key == 'TRAINING_LINES':
             continue
-        config[key]+="abc"
+        config[key] += "abc"
 
     if os.fork() == 0:
         with open('check_config_test.toml', 'w') as test_file:
@@ -41,20 +41,23 @@ def main(argc, argv):
     print("Test 2 : partial/no installations")
     print("----------------------------------")
 
-    config['SL']+="abc"
+    config['SL'] += "abc"
 
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, 'apertium')):
-            shutil.move(os.path.join(path, 'apertium'), os.path.join(path, 'apertium'+'abc'))
+            shutil.move(os.path.join(path, 'apertium'),
+                        os.path.join(path, 'apertium'+'abc'))
             break
-    
+
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, 'yasmet')):
-            shutil.move(os.path.join(path, 'yasmet'), os.path.join(path, 'yasmet'+'abc'))
+            shutil.move(os.path.join(path, 'yasmet'),
+                        os.path.join(path, 'yasmet'+'abc'))
             break
 
     if os.path.isfile(os.path.join(config['LEX_TOOLS'], 'process-tagger-output')):
-        shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'), os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'))
+        shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+                    os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'))
 
     # if os.path.isfile(os.path.join(config['FAST_ALIGN'], 'fast_align')):
     #     shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'), os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'))
@@ -67,20 +70,23 @@ def main(argc, argv):
 
     _, _ = os.wait()
 
-    shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'), os.path.join(config['LEX_TOOLS'], 'process-tagger-output'))
+    shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+'abc'),
+                os.path.join(config['LEX_TOOLS'], 'process-tagger-output'))
 
     # shutil.move(os.path.join(config['FAST_ALIGN'], 'fast_align'+'abc'), os.path.join(config['FAST_ALIGN'], 'fast_align'))
 
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, 'apertium'+'abc')):
-            shutil.move(os.path.join(path, 'apertium'+'abc'), os.path.join(path, 'apertium'))
+            shutil.move(os.path.join(path, 'apertium'+'abc'),
+                        os.path.join(path, 'apertium'))
             break
-    
+
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, 'yasmet'+'abc')):
-            shutil.move(os.path.join(path, 'yasmet'+'abc'), os.path.join(path, 'yasmet'))
+            shutil.move(os.path.join(path, 'yasmet'+'abc'),
+                        os.path.join(path, 'yasmet'))
             break
-    
+
     # Test 3
     config_file = open('config_test.toml', 'r')
     config_toml = config_file.read()
@@ -90,7 +96,7 @@ def main(argc, argv):
     print("Test 3 : wrong TRAINING_LINES")
     print("---------------------")
 
-    for value in ['abc', 1.00, 1e237892, "abc"]:
+    for value in ['abc', 1.00, 1e237892]:
         config['TRAINING_LINES'] = value
         if os.fork() == 0:
             with open('check_config_test.toml', 'w') as test_file:
@@ -118,6 +124,7 @@ def main(argc, argv):
     _, _ = os.wait()
 
     os.remove('check_config_test.toml')
+
 
 if __name__ == '__main__':
     main(len(sys.argv), sys.argv)

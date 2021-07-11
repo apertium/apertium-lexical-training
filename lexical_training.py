@@ -30,7 +30,7 @@ def query(question, default="yes"):
         default = "yes"
 
     while True:
-        print(question + prompt+"(default='"+default+"')?")
+        print(f"{question} {prompt} (default='{default}')?")
         choice = input().lower()
         if default is not None and choice == "":
             return valid[default]
@@ -38,7 +38,6 @@ def query(question, default="yes"):
             return valid[choice]
         else:
             print("Please respond with 'yes', 'no', 'y' or 'n'")
-            exit(1)
 
 
 def pipe(cmds, firstin, lastout, stderr):
@@ -65,28 +64,29 @@ def pipe(cmds, firstin, lastout, stderr):
     return procs[-1]
 
 
-def training(config, cache_dir, log):
+def training(config, log):
 
     MIN = 1
 
-    # file names
+    # file/folder names
+    cache_dir = f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}"
     sl_tagged = os.path.join(
-        cache_dir, config['CORPUS']+'.tagged.'+config['SL'])
+        cache_dir, f"{config['CORPUS']}.tagged.{config['SL']}")
     tl_tagged = os.path.join(
-        cache_dir, config['CORPUS']+'.tagged.'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.tagged.{config['TL']}")
     lines = os.path.join(cache_dir, config['CORPUS']+'.lines')
     tagged_merged = os.path.join(
-        cache_dir, config['CORPUS']+'.tagged-merged.'+config['SL']+'-'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.tagged-merged.{config['SL']}-{config['TL']}")
     alignment = os.path.join(cache_dir, config['CORPUS'] +
                              '.align.'+config['SL']+'-'+config['TL'])
     clean_biltrans = os.path.join(
-        cache_dir, config['CORPUS']+'.clean_biltrans.'+config['SL']+'-'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.clean_biltrans.{config['SL']}-{config['TL']}")
     phrasetable = os.path.join(
-        cache_dir, config['CORPUS']+'.phrasetable.'+config['SL']+'-'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.phrasetable.{config['SL']}-{config['TL']}")
     candidates = os.path.join(
-        cache_dir, config['CORPUS']+'.candidates.'+config['SL']+'-'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.candidates.{config['SL']}-{config['TL']}")
     freq_lex = os.path.join(
-        cache_dir, config['CORPUS']+'.lex.'+config['SL']+'-'+config['TL'])
+        cache_dir, f"{config['CORPUS']}.lex.{config['SL']}-{config['TL']}")
     ngrams = os.path.join(
         cache_dir, 'ngrams')
     events = os.path.join(
@@ -99,23 +99,37 @@ def training(config, cache_dir, log):
         cache_dir, 'rules_all.txt')
     ngrams_all = os.path.join(
         cache_dir, 'ngrams_all.txt')
-    rules = config['CORPUS']+"-"+config['SL']+'-' + \
-        config['TL']+'.ngrams-lm-'+str(MIN)+'.xml'
+    rules = f"{config['CORPUS']}-{config['SL']}-{config['TL']}.ngrams-lm-{MIN}.xml"
+
+    # the directory where all the intermediary outputs are stored
+    if os.path.isdir(cache_dir):
+        if not query(f"Do you want to overwrite the files in '{cache_dir}'"):
+            print(f"(re)move {cache_dir} and re-run lexical_training.py")
+            exit(1)
+        shutil.rmtree(cache_dir)
+
+    os.mkdir(cache_dir)
+
+    if os.path.isfile(rules):
+        if not query(f"Do you want to overwrite '{rules}'"):
+            print(f"(re)move {rules} and re-run lexical_training.py")
+            exit(1)
+        os.remove(rules)
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = len(corpus_sl.readlines())
         if config['TRAINING_LINES'] > training_lines:
-            print('Warning:', str(config['TRAINING_LINES']) +
-                  '(TRAINING_LINES) >', training_lines)
+            print(
+                f"Warning: {config['TRAINING_LINES']}(TRAINING_LINES) > {training_lines}")
         else:
             training_lines = config['TRAINING_LINES']
 
-    print('loading', training_lines, 'lines from the corpora')
+    print(f"loading {training_lines} lines from the corpora")
 
     # tagging the source side corpus
     cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
             ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
-             config['SL']+'-'+config['TL']+'-tagger'],
+             f"{config['SL']}-{config['TL']}-tagger"],
             ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
@@ -123,7 +137,7 @@ def training(config, cache_dir, log):
     # tagging the target side corpus
     cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
             ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
-             config['TL']+'-'+config['SL']+'-tagger'],
+             f"{config['TL']}-{config['SL']}-tagger"],
             ['apertium-pretransfer']]
     with open(config['CORPUS_TL']) as inp, open(tl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
@@ -134,7 +148,7 @@ def training(config, cache_dir, log):
              stdout=f, stderr=log)
 
     clean_tagged = os.path.join(
-        cache_dir, config['CORPUS']+'.clean_tagged')
+        cache_dir, f"{config['CORPUS']}.clean_tagged")
     with open(clean_tagged, 'w') as f1:
         cmds = [['paste', lines, sl_tagged, tl_tagged],
                 ['grep', '<*\t*<']]
@@ -184,8 +198,8 @@ def training(config, cache_dir, log):
 
     # phrasetable
     with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
-        sl_tl_autobil = config['SL'] + '-' + config['TL'] + '.autobil.bin'
-        tl_sl_autobil = config['TL'] + '-' + config['SL'] + '.autobil.bin'
+        sl_tl_autobil = f"{config['SL']}-{config['TL']}.autobil.bin"
+        tl_sl_autobil = f"{config['TL']}-{config['SL']}.autobil.bin"
         with open(tl_tagged, 'r') as f:
             call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
                   os.path.join(config['LANG_DATA'], tl_sl_autobil)], stdin=f, stdout=f1, stderr=log)
@@ -243,16 +257,16 @@ def training(config, cache_dir, log):
                 f0.seek(0)
                 f1.truncate(0)
                 # print(l)
-                cmds = [['grep', '^'+l], ['cut', '-f', '2'], ['head', '-1']]
+                cmds = [['grep', f'^{l}'], ['cut', '-f', '2'], ['head', '-1']]
                 pipe(cmds, f0, f1, log).wait()
                 f0.seek(0)
 
-                cmds = [['grep', '^'+l], ['cut', '-f', '3']]
+                cmds = [['grep', f'^{l}'], ['cut', '-f', '3']]
                 pipe(cmds, f0, f1, log).wait()
                 f1.seek(0)
 
                 cmds = [
-                    ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', 's/^/'+l+'\t/g']]
+                    ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', f's/^/{l}\t/g']]
                 pipe(cmds, f1, f2, log).wait()
 
     os.remove('tmp.yasmet')
@@ -288,20 +302,11 @@ def main():
     print("cleaning corpus....")
     # clean_corpus(config['CORPUS_SL'], config['CORPUS_TL'])
 
-    cache_dir = "cache-"+config['CORPUS']+"-"+config['SL']+"-"+config['TL']
-    log = os.path.join(cache_dir, 'training.log')
-
-    # the directory where all the intermediary outputs are stored
-    if os.path.isdir(cache_dir):
-        if not query("Do you want to overwrite the files in "+"'"+cache_dir+"'"):
-            print("remove", cache_dir, "and re-run lexical_training.py")
-            exit(1)
-        shutil.rmtree(cache_dir)
-
-    os.mkdir(cache_dir)
+    log = os.path.join(
+        f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}", 'training.log')
 
     with open(log, 'a') as log_file:
-        training(config, cache_dir, log_file)
+        training(config, log_file)
 
 
 if __name__ == '__main__':

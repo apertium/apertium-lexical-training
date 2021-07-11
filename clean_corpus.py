@@ -51,13 +51,13 @@ def clean_corpus(corpus1, corpus2):
 
         # also removing leading and trailing spaces
         l1.writelines(
-            re.sub(' +', ' ', lines1[i]).strip()+'\n' for i in sorted(lines_to_keep))
+            f"{re.sub(' +', ' ', lines1[i]).strip()}\n" for i in sorted(lines_to_keep))
         l2.writelines(
-            re.sub(' +', ' ', lines2[i]).strip()+'\n' for i in sorted(lines_to_keep))
+            f"{re.sub(' +', ' ', lines2[i]).strip()}\n" for i in sorted(lines_to_keep))
 
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        print('usage: clean_corpus.py <corpus 1> <corpus 2>')
+        print('Usage: clean_corpus.py <corpus 1> <corpus 2>')
         exit(1)
     clean_corpus(sys.argv[1], sys.argv[2])
