@@ -64,21 +64,20 @@ def pipe(cmds, firstin, lastout, stderr):
     return procs[-1]
 
 
-def training(config, log):
+def training(config, cache_dir, log):
 
     MIN = 1
 
-    # file/folder names
-    cache_dir = f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}"
+    # file names
     sl_tagged = os.path.join(
         cache_dir, f"{config['CORPUS']}.tagged.{config['SL']}")
     tl_tagged = os.path.join(
         cache_dir, f"{config['CORPUS']}.tagged.{config['TL']}")
-    lines = os.path.join(cache_dir, config['CORPUS']+'.lines')
+    lines = os.path.join(cache_dir, f"{config['CORPUS']}.lines")
     tagged_merged = os.path.join(
         cache_dir, f"{config['CORPUS']}.tagged-merged.{config['SL']}-{config['TL']}")
-    alignment = os.path.join(cache_dir, config['CORPUS'] +
-                             '.align.'+config['SL']+'-'+config['TL'])
+    alignment = os.path.join(
+        cache_dir, f"{config['CORPUS']}.align.{config['SL']}-{config['TL']}")
     clean_biltrans = os.path.join(
         cache_dir, f"{config['CORPUS']}.clean_biltrans.{config['SL']}-{config['TL']}")
     phrasetable = os.path.join(
@@ -100,15 +99,6 @@ def training(config, log):
     ngrams_all = os.path.join(
         cache_dir, 'ngrams_all.txt')
     rules = f"{config['CORPUS']}-{config['SL']}-{config['TL']}.ngrams-lm-{MIN}.xml"
-
-    # the directory where all the intermediary outputs are stored
-    if os.path.isdir(cache_dir):
-        if not query(f"Do you want to overwrite the files in '{cache_dir}'"):
-            print(f"(re)move {cache_dir} and re-run lexical_training.py")
-            exit(1)
-        shutil.rmtree(cache_dir)
-
-    os.mkdir(cache_dir)
 
     if os.path.isfile(rules):
         if not query(f"Do you want to overwrite '{rules}'"):
@@ -198,18 +188,23 @@ def training(config, log):
 
     # phrasetable
     with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
-        sl_tl_autobil = f"{config['SL']}-{config['TL']}.autobil.bin"
-        tl_sl_autobil = f"{config['TL']}-{config['SL']}.autobil.bin"
+        sl_tl_autobil = os.path.join(
+            config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
+        tl_sl_autobil = os.path.join(
+            config['LANG_DATA'], f"{config['TL']}-{config['SL']}.autobil.bin")
         with open(tl_tagged, 'r') as f:
-            call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-                  os.path.join(config['LANG_DATA'], tl_sl_autobil)], stdin=f, stdout=f1, stderr=log)
+            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+            call(['process-tagger-output', tl_sl_autobil],
+                 stdin=f, stdout=f1, stderr=log)
         with open(sl_tagged, 'r') as f:
-            call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-                  os.path.join(config['LANG_DATA'], sl_tl_autobil)], stdin=f, stdout=f2, stderr=log)
+            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+            call(['process-tagger-output', sl_tl_autobil],
+                 stdin=f, stdout=f2, stderr=log)
             f.seek(0)
             with open(clean_biltrans, 'w') as f0:
-                call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-                      os.path.join(config['LANG_DATA'], sl_tl_autobil)], stdin=f, stdout=f0, stderr=log)
+                # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
+                call(['process-tagger-output', sl_tl_autobil],
+                     stdin=f, stdout=f0, stderr=log)
 
     cmds = [['paste', tmp1, tmp2, alignment], ['sed', 's/\t/ ||| /g']]
     with open(phrasetable, 'w') as f:
@@ -296,17 +291,29 @@ def main():
     config = check_config()
 
     # adding lex scripts to path
-    sys.path.insert(1, config['LEX_TOOLS'])
+    lex_tools = '/usr/share/apertium-lex-tools'
+    sys.path.insert(1, lex_tools)
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
     print("cleaning corpus....")
     # clean_corpus(config['CORPUS_SL'], config['CORPUS_TL'])
 
-    log = os.path.join(
-        f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}", 'training.log')
+    cache_dir = f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}"
+
+    # the directory where all the intermediary outputs are stored
+    if os.path.isdir(cache_dir):
+        if not query(f"Do you want to overwrite the files in '{cache_dir}'"):
+            print(f"(re)move {cache_dir} and re-run lexical_training.py")
+            exit(0)
+        shutil.rmtree(cache_dir)
+
+    os.mkdir(cache_dir)
+
+    log = os.path.join(cache_dir, "training.log")
 
     with open(log, 'a') as log_file:
-        training(config, log_file)
+        training(config, cache_dir, log_file)
+    print("training complete!!")
 
 
 if __name__ == '__main__':

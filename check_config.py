@@ -5,7 +5,7 @@ import os
 
 # urls of the required tools and data
 corpora_url = "https://wiki.apertium.org/wiki/Corpora"
-lex_tools_url = "https://wiki.apertium.org/wiki/Install_Apertium_core_by_compiling"
+# lex_tools_url = "https://wiki.apertium.org/wiki/Install_Apertium_core_by_compiling"
 fast_align_url = "https://github.com/clab/fast_align"
 langs_url = "https://wiki.apertium.org/wiki/List_of_language_pairs"
 apertium_url = "https://wiki.apertium.org/wiki/Installation"
@@ -14,6 +14,7 @@ yasmet_url = "https://wiki.apertium.org/wiki/Using_weights_for_ambiguous_rules"
 
 def check_config(filename='config.toml'):
     misconfigured = False
+    lex_tools = '/usr/share/apertium-lex-tools'
     with open(filename) as config_file:
         config_toml = config_file.read()
         config = parse(config_toml)
@@ -22,7 +23,7 @@ def check_config(filename='config.toml'):
     assert config_toml == dumps(config)
 
     # changing the paths to absolute
-    for key in ['CORPUS_SL', 'CORPUS_TL', 'LEX_TOOLS', 'FAST_ALIGN', 'LANG_DATA']:
+    for key in ['CORPUS_SL', 'CORPUS_TL', 'FAST_ALIGN', 'LANG_DATA']:
         if not os.path.isabs(config[key]):
             config[key] = os.path.join(os.path.abspath('.'), config[key])
 
@@ -36,22 +37,26 @@ def check_config(filename='config.toml'):
             f"'{config['CORPUS_TL']}'(CORPUS_TL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
         misconfigured = True
 
-    if not os.path.isdir(config['LEX_TOOLS']):
+    if not os.path.isdir(lex_tools):
         print(
-            f"'{config['LEX_TOOLS']}'(LEX_TOOLS) is not a directory, provide a valid directory or \nto install, follow {lex_tools_url}\n")
+            f"'{lex_tools}'is not a directory, install apertium-lex-tools {apertium_url}\n")
         misconfigured = True
     else:
-        # scripts = ['process-tagger-output', 'extract-sentences.py', 'extract-freq-lexicon.py', \
-        #                 'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py', \
-        #                     'ngrams-to-rules-me.py']
+        scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
+                   'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
+                   'ngrams-to-rules-me.py']
 
-        # for script in scripts:
+        for script in scripts:
+            if not os.path.isfile(os.path.join(lex_tools, script)):
+                print(
+                    f"'{script}' is present in '{lex_tools}', install apertium-lex-tools {apertium_url}\n")
+                misconfigured = True
 
         # assuming scripts are intact
-        if 'process-tagger-output' not in os.listdir(config['LEX_TOOLS']):
-            print("'process-tagger-output' is not in", "'"+config['LEX_TOOLS']+"'(LEX_TOOLS),",
-                  "provide a valid directory or \nto install, follow", lex_tools_url, '\n')
-            misconfigured = True
+        # if 'process-tagger-output' not in os.listdir(config['LEX_TOOLS']):
+        #     print("'process-tagger-output' is not in", "'"+config['LEX_TOOLS']+"'(LEX_TOOLS),",
+        #           "provide a valid directory or \nto install, follow", lex_tools_url, '\n')
+        #     misconfigured = True
 
     if not os.path.isfile(config['FAST_ALIGN']):
         print(
@@ -98,7 +103,19 @@ def check_config(filename='config.toml'):
 
     if not yasmet_present:
         print(
-            f"yasmet is either not installed or not added to path, see {yasmet_url}\n")
+            f"yasmet is either not installed or not added to path, install yasmet and add to the path, \
+                {yasmet_url} or re-install apertium-lex-tools with yasmet, {apertium_url}\n")
+        misconfigured = True
+
+    process_tagger_output_present = False
+    for path in os.environ["PATH"].split(os.pathsep):
+        if os.path.isfile(os.path.join(path, 'process-tagger-output')):
+            process_tagger_output_present = True
+            break
+
+    if not process_tagger_output_present:
+        print(
+            f"process-tagger-output is either not installed or not added to path, re-install apertium-lex-tools {apertium_url}\n")
         misconfigured = True
 
     if not isinstance(config['TRAINING_LINES'], int):

@@ -1,0 +1,15 @@
+# cache
+cache*
+__pycache__/
+
+# rules
+*.xml
+
+#logs
+*.log
+
+# configs
+/*.toml
+
+# corpora
+europarl*
