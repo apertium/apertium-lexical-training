@@ -14,7 +14,8 @@ yasmet_url = "https://wiki.apertium.org/wiki/Using_weights_for_ambiguous_rules"
 
 def check_config(filename='config.toml'):
     misconfigured = False
-    lex_tools = '/usr/share/apertium-lex-tools'
+    lex_tools_paths = ['/opt/local/share/apertium-lex-tools',
+                       '/usr/local/share/apertium-lex-tools', '/usr/share/apertium-lex-tools']
     with open(filename) as config_file:
         config_toml = config_file.read()
         config = parse(config_toml)
@@ -37,20 +38,24 @@ def check_config(filename='config.toml'):
             f"'{config['CORPUS_TL']}'(CORPUS_TL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
         misconfigured = True
 
-    if not os.path.isdir(lex_tools):
-        print(
-            f"'{lex_tools}'is not a directory, install apertium-lex-tools {apertium_url}\n")
-        misconfigured = True
-    else:
-        scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
-                   'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
-                   'ngrams-to-rules-me.py']
+    is_lex_tools_present = False
+    for lex_tools in lex_tools_paths:
+        if os.path.isdir(lex_tools):
+            scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
+                       'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
+                       'ngrams-to-rules-me.py', 'common.py']
 
-        for script in scripts:
-            if not os.path.isfile(os.path.join(lex_tools, script)):
-                print(
-                    f"'{script}' is present in '{lex_tools}', install apertium-lex-tools {apertium_url}\n")
-                misconfigured = True
+            for script in scripts:
+                if not os.path.isfile(os.path.join(lex_tools, script)):
+                    print(
+                        f"'{script}' is not present in '{lex_tools}', re-install apertium-lex-tools {apertium_url}\n")
+                    misconfigured = True
+            is_lex_tools_present = True
+
+    if not is_lex_tools_present:
+        print(
+            f"'apertium_lex_tools'is not installed, to install apertium-lex-tools follow {apertium_url}\n")
+        misconfigured = True
 
         # assuming scripts are intact
         # if 'process-tagger-output' not in os.listdir(config['LEX_TOOLS']):

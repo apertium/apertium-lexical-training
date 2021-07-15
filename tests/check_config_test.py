@@ -1,10 +1,11 @@
 # tests check_config.py
-from check_config import check_config
-from tomlkit import parse, dumps
 import os
 import shutil
 import sys
+from tomlkit import parse, dumps
+
 sys.path.append('../')
+from check_config import check_config
 
 
 def main(argc, argv):
@@ -43,11 +44,14 @@ def main(argc, argv):
 
     # config['SL'] += "abc"
 
-    lex_tools = '/usr/share/apertium-lex-tools'
-    if os.path.isdir(lex_tools):
-        scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
-                   'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
-                   'ngrams-to-rules-me.py']
+    lex_tools_paths = ['/opt/local/share/apertium-lex-tools',
+                       '/usr/local/share/apertium-lex-tools', '/usr/share/apertium-lex-tools']
+                       
+    for lex_tools in lex_tools_paths:
+        if os.path.isdir(lex_tools):
+            scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
+                    'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
+                    'ngrams-to-rules-me.py', 'common.py']
 
         for script in scripts:
             if os.path.isfile(os.path.join(lex_tools, script)):
@@ -71,16 +75,17 @@ def main(argc, argv):
             shutil.move(os.path.join(path, 'process-tagger-output'),
                         os.path.join(path, 'process-tagger-output'+tamper_string))
             break
+    
+    for lex_tools in lex_tools_paths:
+        if os.path.isdir(lex_tools):
+            # scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
+            #         'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
+            #         'ngrams-to-rules-me.py', 'common.py']
 
-    if os.path.isdir(lex_tools):
-        scripts = ['extract-sentences.py', 'extract-freq-lexicon.py',
-                   'ngram-count-patterns-maxent2.py', 'merge-ngrams-lambdas.py', 'lambdas-to-rules.py',
-                   'ngrams-to-rules-me.py']
-
-        for script in scripts:
-            if os.path.isfile(os.path.join(lex_tools, script+tamper_string)):
-                shutil.move(os.path.join(lex_tools, script+tamper_string),
-                            os.path.join(lex_tools, script))
+            for script in scripts:
+                if os.path.isfile(os.path.join(lex_tools, script+tamper_string)):
+                    shutil.move(os.path.join(lex_tools, script+tamper_string),
+                                os.path.join(lex_tools, script))
     # if os.path.isfile(os.path.join(config['LEX_TOOLS'], 'process-tagger-output')):
     #     shutil.move(os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
     #                 os.path.join(config['LEX_TOOLS'], 'process-tagger-output'+tamper_string))
