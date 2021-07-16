@@ -1,0 +1,25 @@
+# configuration for lexical training
+
+# corpus name
+CORPUS = "europarl-v7"
+
+# source language
+SL = "spa"
+
+# target language
+TL = "eng"
+
+# source corpus
+CORPUS_SL = "test.spa"
+
+# target corpus
+CORPUS_TL = "test.eng"
+
+# fast align
+FAST_ALIGN = "../../fast_align/build/fast_align"
+
+# apertium language data
+LANG_DATA = "../../apertium-eng-spa"
+
+# number of lines to be trained on (do not enclose in quotes)
+TRAINING_LINES = 100

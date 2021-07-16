@@ -1,9 +1,9 @@
 name: lexical-selection-training
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 jobs:
   training:
     runs-on: ubuntu_latest
@@ -48,3 +48,9 @@ jobs:
           autoreconf -fvi
           ./configure
           make
+          ls /
+          ls $HOME
+
+      - name: Training
+        working-directory: tests/training
+        run: python3 ../../lexical_training.py
