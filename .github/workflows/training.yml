@@ -1,12 +1,15 @@
 name: lexical-selection-training
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
 jobs:
   training:
-    runs-on: ubuntu_latest
+    name: lexical selection training
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
