@@ -33,7 +33,7 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          make
+          make -j4 VERBOSE=1 V=1
           cd ..
 
       - name: checking out apertium-eng-spa
@@ -47,12 +47,13 @@ jobs:
         run: |
           autoreconf -fvi
           ./configure
-          make
+          make -j4 VERBOSE=1 V=1
 
       - name: Installing python dependencies
         run: |
           sudo apt-get -qfy install python3-pip
           pip3 install -r requirements.txt
+          
       - name: Training
         working-directory: tests/training
         run: python3 ../../lexical_training.py
