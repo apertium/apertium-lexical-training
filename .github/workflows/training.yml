@@ -49,6 +49,10 @@ jobs:
           ./configure
           make
 
+      - name: Installing python dependencies
+        run: |
+          sudo apt-get -qfy install python3-pip
+          pip3 install -r requirements.txt
       - name: Training
         working-directory: tests/training
         run: python3 ../../lexical_training.py
