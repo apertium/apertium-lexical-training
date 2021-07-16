@@ -10,6 +10,7 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 - [apertium-core](https://wiki.apertium.org/wiki/Installation) (install apertium-lex-tools with yasmet)
 - [fast_align](https://github.com/clab/fast_align)
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
+- python dependencies in requirements.txt
 
 ## Installation steps
 

@@ -31,12 +31,10 @@ jobs:
         run: |
           sudo apt-get -qfy install libgoogle-perftools-dev libsparsehash-dev
           mkdir build
-          ls
           cd build
           cmake ..
           make
           cd ..
-          ls
 
       - name: checking out apertium-eng-spa
         uses: actions/checkout@v2
@@ -47,12 +45,9 @@ jobs:
       - name: Installing apertium-eng-spa locally
         working-directory: apertium-eng-spa
         run: |
-          ls
           autoreconf -fvi
           ./configure
           make
-          ls /
-          ls $HOME
 
       - name: Training
         working-directory: tests/training
