@@ -2,6 +2,7 @@
 
 from tomlkit import parse, dumps
 import os
+import sys
 
 # urls of the required tools and data
 corpora_url = "https://wiki.apertium.org/wiki/Corpora"
@@ -135,4 +136,5 @@ def check_config(filename='config.toml'):
 
 
 if __name__ == '__main__':
-    check_config()
+    if(len(sys.argv)==2):
+        check_config(sys.argv[1])
