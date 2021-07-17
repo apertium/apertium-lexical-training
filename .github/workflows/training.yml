@@ -7,14 +7,23 @@ on:
     branches: [main]
 
 jobs:
+  check_config:
+    name: Running check_config.py before installing the dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: run
+        run: python3 check_config.py tests/training/config.toml
+
   training:
     name: lexical selection training
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Running check_config.py(before installation of prerequisites)
-        run: python3 check_config.py tests/training/config.toml
+      # - name: Running check_config.py(before installation of prerequisites)
+      #   run: python3 check_config.py tests/training/config.toml
 
       - name: Installing apertium dependencies
         run: |
