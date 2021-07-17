@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Running check_config.py(before installation of prerequisites)
+        run: python3 check_config.py tests/training/config.toml
+
       - name: Installing apertium dependencies
         run: |
           sudo apt-get -qy update
@@ -55,5 +58,4 @@ jobs:
           pip3 install -r requirements.txt
           
       - name: Training
-        working-directory: tests/training
-        run: python3 ../../lexical_training.py
+        run: python3 lexical_training.py tests/training/config.toml

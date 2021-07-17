@@ -10,16 +10,16 @@ SL = "spa"
 TL = "eng"
 
 # source corpus
-CORPUS_SL = "test.spa"
+CORPUS_SL = "tests/training/test.spa"
 
 # target corpus
-CORPUS_TL = "test.eng"
+CORPUS_TL = "tests/training/test.eng"
 
 # fast align
-FAST_ALIGN = "../../fast_align/build/fast_align"
+FAST_ALIGN = "fast_align/build/fast_align"
 
 # apertium language data
-LANG_DATA = "../../apertium-eng-spa"
+LANG_DATA = "apertium-eng-spa"
 
 # number of lines to be trained on (do not enclose in quotes)
 TRAINING_LINES = 100
