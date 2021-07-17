@@ -4,7 +4,7 @@ The procedure for lexical selection training is a bit messy, with various script
 
 for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/User-friendly_lexical_selection_training
 
-## Requirements
+## requirements
 
 - [parallel corpus](https://wiki.apertium.org/wiki/Corpora)
 - [apertium-core](https://wiki.apertium.org/wiki/Installation) (install apertium-lex-tools with yasmet)
@@ -12,12 +12,22 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
 - python dependencies in [requirements.txt](requirements.txt)
 
-## Installation steps
+## how to use
 
 - install the requirements and download or clone this repo (`git clone https://github.com/vivekvardhanadepu/apertium-lexical-training.git`)
 - create config.toml and provide tools' and corpus' paths in it (for ref, see [config.toml.example](config.toml.example))
-- run lexical_training.py
+- run lexical_training.py</br>
+  ```
+  python3 lexical_training.py [CONFIG_FILE]
+
+  args:
+    CONFIG_FILE : optional, default='config.toml'
+  ```
 
 ## tests
 
-This folder contains scripts for automated testing of the helper scripts
+This folder contains scripts and data for automated testing of the training scripts
+
+## references
+
+

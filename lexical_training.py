@@ -286,9 +286,9 @@ def training(config, cache_dir, log):
         ngrams_to_rules(ngrams_all)
 
 
-def main():
+def main(config_file):
     print("validating configuration....")
-    config = check_config()
+    config = check_config(config_file)
 
     # adding lex scripts to path
     lex_tools = '/usr/share/apertium-lex-tools'
@@ -317,4 +317,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    config_file = 'config.toml'
+    if(len(sys.argv)==2):
+        config_file = sys.argv[1]
+    main(config_file)
