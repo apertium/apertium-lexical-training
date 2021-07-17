@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Installing python dependencies
+        run: |
+          sudo apt-get -qfy install python3-pip
+          pip3 install -r requirements.txt
+          
       - name: run
         run: python3 check_config.py tests/training/config.toml
 
