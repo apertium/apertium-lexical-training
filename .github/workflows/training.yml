@@ -19,7 +19,7 @@ jobs:
           pip3 install -r requirements.txt
           
       - name: run
-        run: python3 check_config.py tests/training/config.toml
+        run: "! python3 check_config.py tests/training/config.toml"
 
   training:
     name: lexical selection training
@@ -72,4 +72,4 @@ jobs:
           pip3 install -r requirements.txt
           
       - name: Training
-        run: python3 lexical_training.py tests/training/config.toml
+        run: python3 lexical_selection_training.py tests/training/config.toml

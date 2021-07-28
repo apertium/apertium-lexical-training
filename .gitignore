@@ -13,3 +13,6 @@ __pycache__/
 
 # corpora
 europarl*
+
+# bash files
+/*.sh

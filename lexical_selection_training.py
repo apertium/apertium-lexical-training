@@ -252,7 +252,7 @@ def training(config, cache_dir, log):
                 f0.seek(0)
                 f1.truncate(0)
                 # print(l)
-                cmds = [['grep', f'^{l}'], ['cut', '-f', '2'], ['head', '-1']]
+                cmds = [['grep', f'^{l}'], ['head', '-1'], ['cut', '-f', '2']]
                 pipe(cmds, f0, f1, log).wait()
                 f0.seek(0)
 

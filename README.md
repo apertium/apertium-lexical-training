@@ -6,11 +6,21 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 
 ## requirements
 
+**parallel corpora:**
+
 - [parallel corpus](https://wiki.apertium.org/wiki/Corpora)
 - [apertium-core](https://wiki.apertium.org/wiki/Installation) (install apertium-lex-tools with yasmet)
 - [fast_align](https://github.com/clab/fast_align)
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
 - python dependencies in [requirements.txt](requirements.txt)
+
+**non-parallel corpora:**
+- [non-parallel corpus](https://wiki.apertium.org/wiki/Corpora)
+- [apertium-core](https://wiki.apertium.org/wiki/Installation)
+- [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
+- [IRSTLM](https://wiki.apertium.org/wiki/IRSTLM)
+- python dependencies in [requirements.txt](requirements.txt)
+
 
 ## how to use
 
@@ -34,3 +44,6 @@ This folder contains scripts and data for automated testing of the training scri
 Philipp Koehn.
 *Europarl: A Parallel Corpus for Statistical Machine Translation.*
 MT Summit 2005.
+
+<a id="2">[2]</a>
+https://www-i6.informatik.rwth-aachen.de/web/Software/YASMET.html
