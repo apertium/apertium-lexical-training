@@ -225,65 +225,78 @@ def training(config, cache_dir, log):
     with open(freq_lex, 'w') as f, redirect_stdout(f), redirect_stderr(log):
         extract_freq_lexicon(candidates)
 
+    crisphold = 1.5
     # count patterns
-    mod = import_module('ngram-count-patterns-maxent2')
+    mod = import_module('ngram-count-patterns')
     ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
-    with open(ngrams, 'w') as f1, open(events, 'w') as f2, redirect_stdout(f2), redirect_stderr(f1):
-        ngram_count_patterns(freq_lex, candidates)
-
-    # print("hello")
-    with open(events, 'r') as f1, open(events_trimmed, 'w') as f2:
-        call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'],
-             stdin=f1, stdout=f2, stderr=log)
-    # print("world")
-
-    with open(events_trimmed, 'r') as f:
-        cmds = [['cut', '-f', '1'], ['sort', '-u']]  # ,
-        # ['sed', 's/[\*\^\$]/\\\\\1/g']]
-        with open('tmp.sl', 'w') as f0:
-            pipe(cmds, f, f0, log).wait()
-
-    # extracting lambdas with yasmet
-    with open('tmp.sl', 'r') as f:
-        temp_lambdas = f.read()
-        with open(events_trimmed, 'r') as f0, open('tmp.yasmet', 'a+') as f1, open(lambdas, 'a') as f2:
-            f2.truncate(0)
-            for l in temp_lambdas.split('\n')[:-1]:
-                f0.seek(0)
-                f1.truncate(0)
-                # print(l)
-                cmds = [['grep', f'^{l}'], ['head', '-1'], ['cut', '-f', '2']]
-                pipe(cmds, f0, f1, log).wait()
-                f0.seek(0)
-
-                cmds = [['grep', f'^{l}'], ['cut', '-f', '3']]
-                pipe(cmds, f0, f1, log).wait()
-                f1.seek(0)
-
-                cmds = [
-                    ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', f's/^/{l}\t/g']]
-                pipe(cmds, f1, f2, log).wait()
-
-    os.remove('tmp.yasmet')
-    os.remove('tmp.sl')
-
-    # merge ngrams lambdas
-    mod = import_module('merge-ngrams-lambdas')
-    merge_ngrams_lambdas = getattr(mod, 'merge_ngrams_lambdas')
-    with open(rules_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        merge_ngrams_lambdas(ngrams, lambdas)
-
-    # lambdas to rules
-    mod = import_module('lambdas-to-rules')
-    lambdas_to_rules = getattr(mod, 'lambdas_to_rules')
-    with open(ngrams_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        lambdas_to_rules(freq_lex, rules_all)
+    with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+        ngram_count_patterns(freq_lex, candidates, crisphold)
 
     # ngrams to rules
-    mod = import_module('ngrams-to-rules-me')
+    mod = import_module('ngrams-to-rules')
     ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngrams_to_rules(ngrams_all)
+        ngrams_to_rules(ngrams, crisphold)
+
+    # # count patterns
+    # mod = import_module('ngram-count-patterns-maxent2')
+    # ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
+    # with open(ngrams, 'w') as f1, open(events, 'w') as f2, redirect_stdout(f2), redirect_stderr(f1):
+    #     ngram_count_patterns(freq_lex, candidates)
+
+    # # print("hello")
+    # with open(events, 'r') as f1, open(events_trimmed, 'w') as f2:
+    #     call(['grep', '-v', '-e', '\$ 0\.0 #', '-e', '\$ 0 #'],
+    #          stdin=f1, stdout=f2, stderr=log)
+    # # print("world")
+
+    # with open(events_trimmed, 'r') as f:
+    #     cmds = [['cut', '-f', '1'], ['sort', '-u']]  # ,
+    #     # ['sed', 's/[\*\^\$]/\\\\\1/g']]
+    #     with open('tmp.sl', 'w') as f0:
+    #         pipe(cmds, f, f0, log).wait()
+
+    # # extracting lambdas with yasmet
+    # with open('tmp.sl', 'r') as f:
+    #     temp_lambdas = f.read()
+    #     with open(events_trimmed, 'r') as f0, open('tmp.yasmet', 'a+') as f1, open(lambdas, 'a') as f2:
+    #         f2.truncate(0)
+    #         for l in temp_lambdas.split('\n')[:-1]:
+    #             f0.seek(0)
+    #             f1.truncate(0)
+    #             # print(l)
+    #             cmds = [['grep', f'^{l}'], ['head', '-1'], ['cut', '-f', '2']]
+    #             pipe(cmds, f0, f1, log).wait()
+    #             f0.seek(0)
+
+    #             cmds = [['grep', f'^{l}'], ['cut', '-f', '3']]
+    #             pipe(cmds, f0, f1, log).wait()
+    #             f1.seek(0)
+
+    #             cmds = [
+    #                 ['yasmet', '-red', str(MIN)], ['yasmet'], ['sed', 's/ /\t/g'], ['sed', f's/^/{l}\t/g']]
+    #             pipe(cmds, f1, f2, log).wait()
+
+    # os.remove('tmp.yasmet')
+    # os.remove('tmp.sl')
+
+    # # merge ngrams lambdas
+    # mod = import_module('merge-ngrams-lambdas')
+    # merge_ngrams_lambdas = getattr(mod, 'merge_ngrams_lambdas')
+    # with open(rules_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+    #     merge_ngrams_lambdas(ngrams, lambdas)
+
+    # # lambdas to rules
+    # mod = import_module('lambdas-to-rules')
+    # lambdas_to_rules = getattr(mod, 'lambdas_to_rules')
+    # with open(ngrams_all, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+    #     lambdas_to_rules(freq_lex, rules_all)
+
+    # # ngrams to rules
+    # mod = import_module('ngrams-to-rules-me')
+    # ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
+    # with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
+    #     ngrams_to_rules(ngrams_all)
 
 
 def main(config_file):
@@ -291,7 +304,7 @@ def main(config_file):
     config = check_config(config_file)
 
     # adding lex scripts to path
-    lex_tools = '/usr/share/apertium-lex-tools'
+    lex_tools = '/home/vivek/Documents/FOSS/apertium/lex-tools/scripts'
     sys.path.insert(1, lex_tools)
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
@@ -318,6 +331,6 @@ def main(config_file):
 
 if __name__ == '__main__':
     config_file = 'config.toml'
-    if(len(sys.argv)==2):
+    if(len(sys.argv) == 2):
         config_file = sys.argv[1]
     main(config_file)
