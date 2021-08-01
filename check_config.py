@@ -76,6 +76,14 @@ def check_config(config_filename):
         misconfigured = True
     else:
         if config['IS_PARALLEL']:
+            if not os.path.isabs(config['FAST_ALIGN']):
+                config['FAST_ALIGN'] = os.path.join(
+                    os.path.abspath('.'), config['FAST_ALIGN'])
+            if not os.path.isfile(config['FAST_ALIGN']):
+                print(
+                    f"'{config['FAST_ALIGN']}'(FAST_ALIGN) is not a file, provide a valid executable or \nto install, follow {fast_align_url}\n")
+                misconfigured = True
+
             yasmet_present = False
             for path in os.environ["PATH"].split(os.pathsep):
                 if os.path.isfile(os.path.join(path, 'yasmet')):
@@ -97,14 +105,6 @@ def check_config(config_filename):
             if not process_tagger_output_present:
                 print(
                     f"process-tagger-output is not installed, re-install apertium-lex-tools {apertium_url}\n")
-                misconfigured = True
-
-            if not os.path.isabs(config['FAST_ALIGN']):
-                config['FAST_ALIGN'] = os.path.join(
-                    os.path.abspath('.'), config['FAST_ALIGN'])
-            if not os.path.isfile(config['FAST_ALIGN']):
-                print(
-                    f"'{config['FAST_ALIGN']}'(FAST_ALIGN) is not a file, provide a valid executable or \nto install, follow {fast_align_url}\n")
                 misconfigured = True
             # else:
             #     if 'fast_align' not in os.listdir(config['FAST_ALIGN']):
@@ -128,7 +128,7 @@ def check_config(config_filename):
 
             if not is_lex_tools_present:
                 print(
-                    f"'apertium_lex_tools' is not installed, to install apertium-lex-tools follow {apertium_url}\n")
+                    f"apertium_lex_tools scripts are not installed, re-install apertium-lex-tools {apertium_url}\n")
                 misconfigured = True
 
         else:
@@ -178,17 +178,6 @@ def check_config(config_filename):
             #         f"IRSTLM is either not installed or not defined as an environment variable, see {irstlm_url}\n")
             #     misconfigured = True
 
-            irstlm_present = False
-            for path in os.environ["PATH"].split(os.pathsep):
-                if os.path.isfile(os.path.join(path, 'build-lm.sh')):
-                    irstlm_present = True
-                    break
-
-            if not irstlm_present:
-                print(
-                    f"'build-lm.sh' is not installed or added to path, see {irstlm_url}\n")
-                misconfigured = True
-
             is_lex_tools_present = False
             for lex_tools in lex_tools_paths:
                 if os.path.isdir(lex_tools):
@@ -205,7 +194,18 @@ def check_config(config_filename):
 
             if not is_lex_tools_present:
                 print(
-                    f"'apertium_lex_tools' is not installed, to install apertium-lex-tools follow {apertium_url}\n")
+                    f"apertium_lex_tools scripts are not installed, re-install apertium-lex-tools {apertium_url}\n")
+                misconfigured = True
+
+            irstlm_present = False
+            for path in os.environ["PATH"].split(os.pathsep):
+                if os.path.isfile(os.path.join(path, 'build-lm.sh')):
+                    irstlm_present = True
+                    break
+
+            if not irstlm_present:
+                print(
+                    f"'build-lm.sh' is not installed or added to path, see {irstlm_url}\n")
                 misconfigured = True
 
     if misconfigured:
