@@ -18,17 +18,17 @@ jobs:
           sudo apt-get -qfy install python3-pip
           pip3 install -r requirements.txt
           
-      - name: run
+      - name: Parallel
         run: "! python3 check_config.py tests/training/config.toml"
 
-  training:
-    name: lexical selection training
+      - name: Non-parallel
+        run: "! python3 check_config.py tests/training/config-np.toml"
+
+  parallel_training:
+    name: parallel corpora training
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      # - name: Running check_config.py(before installation of prerequisites)
-      #   run: python3 check_config.py tests/training/config.toml
 
       - name: Installing apertium dependencies
         run: |
@@ -53,7 +53,7 @@ jobs:
           make -j4 VERBOSE=1 V=1
           cd ..
 
-      - name: checking out apertium-eng-spa
+      - name: Checking out apertium-eng-spa
         uses: actions/checkout@v2
         with:
           repository: apertium/apertium-eng-spa
@@ -73,3 +73,52 @@ jobs:
           
       - name: Training
         run: python3 lexical_selection_training.py tests/training/config.toml
+    
+  non_parallel_training:
+    name: non-parallel corpora training
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Installing apertium dependencies
+        run: |
+          sudo apt-get -qy update
+          sudo apt-get -qfy install wget ca-certificates
+          wget -q https://apertium.projectjj.com/apt/install-nightly.sh -O - | sudo bash
+          sudo apt-get -qfy install --no-install-recommends apertium-all-dev
+
+      - name: Checking out apertium-eng-spa
+        uses: actions/checkout@v2
+        with:
+          repository: apertium/apertium-eng-spa
+          path: apertium-eng-spa
+
+      - name: Installing apertium-eng-spa locally
+        working-directory: apertium-eng-spa
+        run: |
+          autoreconf -fvi
+          ./configure
+          make -j4 VERBOSE=1 V=1
+
+      - name: Installing python dependencies
+        run: |
+          sudo apt-get -qfy install python3-pip
+          pip3 install -r requirements.txt
+
+      - name: Checking out IRSTLM
+        uses: actions/checkout@v2
+        with:
+          repository: irstlm-team/irstlm
+          path: irstlm
+
+      - name: Installing IRSTLM
+        working-directory: irstlm
+        run: |
+          sed -i 's/isystem/I/' src/Makefile.am
+          sh regenerate-makefiles.sh
+          ./configure
+          make -j4 VERBOSE=1 V=1
+          sudo make install
+        
+      - name: Training
+        run: python3 lexical_selection_training.py tests/training/config-np.toml

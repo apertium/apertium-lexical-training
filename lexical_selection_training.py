@@ -64,7 +64,7 @@ def pipe(cmds, firstin, lastout, stderr):
     return procs[-1]
 
 
-def training(config, cache_dir, log):
+def parallel_training(config, cache_dir, log):
 
     MIN = 1
 
@@ -299,13 +299,21 @@ def training(config, cache_dir, log):
     #     ngrams_to_rules(ngrams_all)
 
 
+def non_parallel_training(config, cache_dir, log):
+    pass
+
+
 def main(config_file):
     print("validating configuration....")
     config = check_config(config_file)
 
-    # adding lex scripts to path
-    lex_tools = '/home/vivek/Documents/FOSS/apertium/lex-tools/scripts'
-    sys.path.insert(1, lex_tools)
+    # appending lex scripts' paths to environment path
+    sys.path.insert(0, '/usr/share/apertium-lex-tools')
+    sys.path.insert(0, '/opt/local/share/apertium-lex-tools')
+    sys.path.insert(0, '/usr/local/share/apertium-lex-tools')
+
+    # remove after testing
+    sys.path.insert(0, '/home/vivek/Documents/FOSS/apertium/lex-tools/scripts')
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
     print("cleaning corpus....")
@@ -313,6 +321,8 @@ def main(config_file):
 
     cache_dir = f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}"
 
+    if not config['IS_PARALLEL']:
+        cache_dir = cache_dir + '-np'
     # the directory where all the intermediary outputs are stored
     if os.path.isdir(cache_dir):
         if not query(f"Do you want to overwrite the files in '{cache_dir}'"):
@@ -325,7 +335,10 @@ def main(config_file):
     log = os.path.join(cache_dir, "training.log")
 
     with open(log, 'a') as log_file:
-        training(config, cache_dir, log_file)
+        if config['IS_PARALLEL']:
+            parallel_training(config, cache_dir, log_file)
+        else:
+            non_parallel_training(config, cache_dir, log_file)
     print("training complete!!")
 
 
