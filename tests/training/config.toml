@@ -1,6 +1,6 @@
 # configuration for lexical training
 
-# parallel(true) or non-parallel corpora(false)
+# parallel(true) or non-parallel(false)
 IS_PARALLEL = true
 
 # corpus name
@@ -11,6 +11,9 @@ SL = "eng"
 
 # target language[it should match with the language codes of apertium]
 TL = "spa"
+
+# language pair code(as per apertium language codes)
+PAIR = "eng-spa"
 
 # source corpus
 CORPUS_SL = "tests/training/test.eng"

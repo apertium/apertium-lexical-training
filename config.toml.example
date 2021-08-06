@@ -1,22 +1,26 @@
 # configuration for lexical training
+# Note: one of CORPUS_TL or TL_MODEL(binary language model) is required for non-parallel corpora training. If both are specified, CORPUS_TL is ignored
 
-# parallel(true) or non-parallel corpora(false)
-IS_PARALLEL = true
+# parallel(true) or non-parallel(false)
+IS_PARALLEL = false
 
 # corpus name
 CORPUS = "europarl-v7"
 
 # source language[it should match with the language codes of apertium]
-SL = "eng"
+SL = "spa"
 
 # target language[it should match with the language codes of apertium]
-TL = "spa"
+TL = "eng"
+
+# language pair code(as per apertium language codes)
+PAIR = "eng-spa"
 
 # source corpus
-CORPUS_SL = "europarl-v7.eng-spa.eng"
+CORPUS_SL = "europarl-v7.eng-spa.spa"
 
 # target corpus
-CORPUS_TL = "europarl-v7.eng-spa.spa"
+CORPUS_TL = "europarl-v7.eng-spa.eng"
 
 # apertium-lex-tools scripts
 # LEX_TOOLS = "../apertium-lex-tools/scripts"
@@ -25,7 +29,7 @@ CORPUS_TL = "europarl-v7.eng-spa.spa"
 LANG_DATA = "../apertium-eng-spa"
 
 # number of lines to be trained on (do not enclose in quotes)
-TRAINING_LINES = 10
+TRAINING_LINES = 100
 
 # fast align build folder[not required for non-parallel training]
 FAST_ALIGN = "../fast_align/build/fast_align"
@@ -35,3 +39,6 @@ MAX_RULES = 3
 
 # crisphold
 CRISPHOLD = 1.5
+
+# TL binary language model[not required for parallel training]
+TL_MODEL = "europarl-v7.eng-spa.eng.lm"

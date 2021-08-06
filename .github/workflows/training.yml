@@ -121,4 +121,6 @@ jobs:
           sudo make install
         
       - name: Training
-        run: python3 lexical_selection_training.py tests/training/config-np.toml
+        run: |
+          export IRSTLM="/usr/local"
+          python3 lexical_selection_training.py tests/training/config-np.toml

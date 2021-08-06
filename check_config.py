@@ -34,11 +34,11 @@ def check_config(config_filename):
         print(
             f"'{config['CORPUS_SL']}'(CORPUS_SL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
         misconfigured = True
-
-    if not os.path.isfile(config['CORPUS_TL']):
-        print(
-            f"'{config['CORPUS_TL']}'(CORPUS_TL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
-        misconfigured = True
+    if 'TL_MODEL' not in config:
+        if not os.path.isfile(config['CORPUS_TL']):
+            print(
+                f"'{config['CORPUS_TL']}'(CORPUS_TL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
+            misconfigured = True
 
     if not os.path.isdir(config['LANG_DATA']):
         print(
@@ -145,13 +145,13 @@ def check_config(config_filename):
             if os.path.isdir(config['LANG_DATA']):
                 modules = []
                 modules.append(
-                    f"apertium-{config['SL']}-{config['TL']}.{config['SL']}-{config['TL']}.t1x")
+                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t1x")
                 modules.append(f"{config['SL']}-{config['TL']}.t1x.bin")
                 modules.append(
-                    f"apertium-{config['SL']}-{config['TL']}.{config['SL']}-{config['TL']}.t2x")
+                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t2x")
                 modules.append(f"{config['SL']}-{config['TL']}.t2x.bin")
                 modules.append(
-                    f"apertium-{config['SL']}-{config['TL']}.{config['SL']}-{config['TL']}.t3x")
+                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t3x")
                 modules.append(f"{config['SL']}-{config['TL']}.t3x.bin")
                 modules.append(f"{config['SL']}-{config['TL']}.autogen.bin")
                 modules.append(f"{config['SL']}-{config['TL']}.autopgen.bin")
@@ -160,6 +160,16 @@ def check_config(config_filename):
                         print(f"'{module}' is not in '{config['LANG_DATA']}'(LANG_DATA), \
                             provide a valid directory or \nto install, follow {langs_url}\n")
                         misconfigured = True
+
+            if not 'IRSTLM' in os.environ:
+                print(
+                    f"IRSTLM is either not installed or not defined as an environment variable, see {irstlm_url}\n")
+                misconfigured = True
+            else:
+                if not os.path.isfile(os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh')):
+                    print(
+                        f"'build-lm.sh' is not present in $IRSTLM('{os.environ['IRSTLM']}'), see {irstlm_url}\n")
+                    misconfigured = True
 
             multitrans_present = False
             for path in os.environ["PATH"].split(os.pathsep):
@@ -183,11 +193,6 @@ def check_config(config_filename):
                     f"irstlm-ranker is not installed, re-install apertium-lex-tools with irstlm {apertium_url}\n")
                 misconfigured = True
 
-            # if not 'IRSTLM' in os.environ:
-            #     print(
-            #         f"IRSTLM is either not installed or not defined as an environment variable, see {irstlm_url}\n")
-            #     misconfigured = True
-
             is_lex_tools_present = False
             for lex_tools in lex_tools_paths:
                 if os.path.isdir(lex_tools):
@@ -207,16 +212,11 @@ def check_config(config_filename):
                     f"apertium_lex_tools scripts are not installed, re-install apertium-lex-tools {apertium_url}\n")
                 misconfigured = True
 
-            irstlm_present = False
-            for path in os.environ["PATH"].split(os.pathsep):
-                if os.path.isfile(os.path.join(path, 'build-lm.sh')):
-                    irstlm_present = True
-                    break
-
-            if not irstlm_present:
-                print(
-                    f"'build-lm.sh' is not installed or added to path, see {irstlm_url}\n")
-                misconfigured = True
+            if 'TL_MODEL' in config:
+                if not os.path.isfile(config['TL_MODEL']):
+                    print(
+                        f"'{config['TL_MODEL']}'(TL_MODEL) is not a file, provide a valid file or \nto build, see {irstlm_url}\n")
+                    misconfigured = True
 
     if misconfigured:
         exit(1)
