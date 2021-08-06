@@ -225,18 +225,17 @@ def parallel_training(config, cache_dir, log):
     with open(freq_lex, 'w') as f, redirect_stdout(f), redirect_stderr(log):
         extract_freq_lexicon(candidates)
 
-    crisphold = 1.5
     # count patterns
     mod = import_module('ngram-count-patterns')
     ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
     with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngram_count_patterns(freq_lex, candidates, crisphold)
+        ngram_count_patterns(freq_lex, candidates, config['CRISPHOLD'], config['MAX_RULES'])
 
     # ngrams to rules
     mod = import_module('ngrams-to-rules')
     ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngrams_to_rules(ngrams, crisphold)
+        ngrams_to_rules(ngrams, config['CRISPHOLD'])
 
     # # count patterns
     # mod = import_module('ngram-count-patterns-maxent2')

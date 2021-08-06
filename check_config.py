@@ -70,6 +70,16 @@ def check_config(config_filename):
             f"'{config['TRAINING_LINES']}'(TRAINING_LINES) is not an integer. pass an integer \n")
         misconfigured = True
 
+    if not isinstance(config['MAX_RULES'], int):
+        print(
+            f"'{config['MAX_RULES']}'(MAX_RULES) is not an integer. pass an integer \n")
+        misconfigured = True
+    
+    if not (isinstance(config['CRISPHOLD'], int) or isinstance(config['CRISPHOLD'], float)):
+        print(
+            f"'{config['CRISPHOLD']}'(CRISPHOLD) is not an integer. pass an integer \n")
+        misconfigured = True
+
     if not isinstance(config['IS_PARALLEL'], bool):
         print(
             f"'{config['IS_PARALLEL']}'(IS_PARALLEL) is not an boolean. pass true or false \n")

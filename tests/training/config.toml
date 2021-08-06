@@ -1,5 +1,8 @@
 # configuration for lexical training
 
+# parallel(true) or non-parallel corpora(false)
+IS_PARALLEL = true
+
 # corpus name
 CORPUS = "europarl-v7"
 
@@ -16,7 +19,7 @@ CORPUS_SL = "tests/training/test.eng"
 CORPUS_TL = "tests/training/test.spa"
 
 # apertium-lex-tools scripts
-# LEX_TOOLS = "/home/vivek/Documents/FOSS/apertium/apertium-lex-tools/scripts"
+# LEX_TOOLS = "../apertium-lex-tools/scripts"
 
 # apertium language data
 LANG_DATA = "apertium-eng-spa"
@@ -24,8 +27,11 @@ LANG_DATA = "apertium-eng-spa"
 # number of lines to be trained on (do not enclose in quotes)
 TRAINING_LINES = 100
 
-# parallel(true) or non-parallel corpora(false)
-IS_PARALLEL = true
-
 # fast align build folder[not required for non-parallel training]
 FAST_ALIGN = "fast_align/build/fast_align"
+
+# max number of rules
+MAX_RULES = 3
+
+# crisphold
+CRISPHOLD = 1.5
