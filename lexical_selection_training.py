@@ -299,7 +299,65 @@ def parallel_training(config, cache_dir, log):
 
 
 def non_parallel_training(config, cache_dir, log):
-    pass
+
+    MIN = 1
+
+    # file names
+    sl_tagged = os.path.join(
+        cache_dir, f"{config['CORPUS']}.tagged.{config['SL']}")
+    lines = os.path.join(cache_dir, f"{config['CORPUS']}.lines")
+    rules = f"{config['CORPUS']}-{config['SL']}-{config['TL']}.ngrams-lm-{MIN}.xml"
+
+    if os.path.isfile(rules):
+        if not query(f"Do you want to overwrite '{rules}'"):
+            print(f"(re)move {rules} and re-run lexical_training.py")
+            exit(1)
+        os.remove(rules)
+
+    with open(config['CORPUS_SL'], 'r') as corpus_sl:
+        training_lines = len(corpus_sl.readlines())
+        if config['TRAINING_LINES'] > training_lines:
+            print(
+                f"Warning: {config['TRAINING_LINES']}(TRAINING_LINES) > {training_lines}")
+        else:
+            training_lines = config['TRAINING_LINES']
+
+    print(f"loading {training_lines} lines from the corpora")
+
+    # tagging the source side corpus
+    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
+            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
+             f"{config['SL']}-{config['TL']}-tagger"],
+            ['apertium-pretransfer']]
+    with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
+        pipe(cmds, inp, outp, log).wait()
+    
+    # removing lines with no analyses
+    with open(lines, 'w') as f:
+        call(['seq', '1', str(training_lines)],
+             stdout=f, stderr=log)
+
+    clean_tagged = os.path.join(
+        cache_dir, f"{config['CORPUS']}.clean_tagged")
+    with open(clean_tagged, 'w') as f1:
+        cmds = [['paste', lines, sl_tagged],
+                ['grep', '<*\t*<']]
+        pipe(cmds, None, f1, log).wait()
+
+    with open(clean_tagged, 'r') as f0:
+        with open(lines, 'w') as f1:
+            call(['cut', '-f', '1'], stdin=f0, stdout=f1, stderr=log)
+
+        f0.seek(0)
+        with open(sl_tagged, 'w') as f2:
+            cmds = [['cut', '-f', '2'], ['sed', 's/ /~~/g'],
+                    ['sed', 's/\$[^\^]*/$ /g']]
+            pipe(cmds, f0, f2, log).wait()
+
+    os.remove(clean_tagged)
+
+
+
 
 
 def main(config_file):
@@ -312,7 +370,7 @@ def main(config_file):
     sys.path.insert(0, '/usr/local/share/apertium-lex-tools')
 
     # remove after testing
-    sys.path.insert(0, '/home/vivek/Documents/FOSS/apertium/lex-tools/scripts')
+    sys.path.insert(0, '../lex-tools/scripts')
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
     print("cleaning corpus....")
