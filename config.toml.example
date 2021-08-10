@@ -8,19 +8,19 @@ IS_PARALLEL = false
 CORPUS = "europarl-v7"
 
 # source language[it should match with the language codes of apertium]
-SL = "spa"
+SL = "eng"
 
 # target language[it should match with the language codes of apertium]
-TL = "eng"
+TL = "spa"
 
 # language pair code(as per apertium language codes)
 PAIR = "eng-spa"
 
 # source corpus
-CORPUS_SL = "europarl-v7.eng-spa.spa"
+CORPUS_SL = "europarl-v7.eng-spa.eng"
 
 # target corpus
-CORPUS_TL = "europarl-v7.eng-spa.eng"
+CORPUS_TL = "europarl-v7.eng-spa.spa"
 
 # apertium-lex-tools scripts
 # LEX_TOOLS = "../apertium-lex-tools/scripts"
@@ -40,5 +40,5 @@ MAX_RULES = 3
 # crisphold
 CRISPHOLD = 1.5
 
-# TL binary language model[not required for parallel training]
-TL_MODEL = "europarl-v7.eng-spa.eng.lm"
+# TL binary language model(.lm or .blm)[not required for parallel training]
+TL_MODEL = "europarl-v7.eng-spa.spa.lm"
