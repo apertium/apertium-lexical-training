@@ -310,13 +310,13 @@ def non_parallel_training(config, cache_dir, log):
     tl_lm = f"cache-{config['SL']}-{config['TL']}/{config['CORPUS']}.{config['TL']}.lm"
     biltrans = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.biltrans")
     ambig = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ambig")
-    multi_trimmed = os.path.join('./', f"{config['CORPUS']}.{config['SL']}-{config['TL']}.multi-trimmed")
+    multi_trimmed = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.multi-trimmed")
     ranked = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ranked")
     annotated = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.annotated")
     lex_freq = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.freq")
     ngrams = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams")
     patterns = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.patterns")
-    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm.xml"
+    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm-np.xml"
 
     if os.path.isfile(rules):
         if not query(f"Do you want to overwrite '{rules}'"):
@@ -360,9 +360,10 @@ def non_parallel_training(config, cache_dir, log):
 
         f0.seek(0)
         with open(sl_tagged, 'w') as f2:
-            cmds = [['cut', '-f', '2'], ['sed', 's/ /~~/g'],
-                    ['sed', 's/\$[^\^]*/$ /g']]
-            pipe(cmds, f0, f2, log).wait()
+            # cmds = [['cut', '-f', '2'], ['sed', 's/ /~~/g'],
+            #         ['sed', 's/\$[^\^]*/$ /g']]
+            # pipe(cmds, f0, f2, log).wait()
+            call(['cut', '-f', '2'], stdin=f0, stdout=f2, stderr=log)
 
     os.remove(clean_tagged)
 
@@ -370,7 +371,7 @@ def non_parallel_training(config, cache_dir, log):
     if 'TL_MODEL' in config:
         tl_lm = config['TL_MODEL']
     else:
-        call([os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh'), '-i', config['TL'], '-o', 
+        call([os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh'), '-i', config['CORPUS_TL'], '-o', 
                 tl_lm+'.gz', '-t', 'tmp'], stdout=log, stderr=log)
 
         with gzip.open(tl_lm+'.gz', 'rb') as f_in, open(tl_lm, 'wb') as f_out:
@@ -400,9 +401,9 @@ def non_parallel_training(config, cache_dir, log):
         with open(biltrans, 'w') as f_out:
             call(['multitrans', '-b', '-t', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
 
-        # f_in.seek(0)
-        # with open(multi_trimmed, 'w') as f_out:
-        #     call(['multitrans', '-m', '-t', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
+        f_in.seek(0)
+        with open(multi_trimmed, 'w') as f_out:
+            call(['multitrans', '-m', '-t', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
 
     with open(ambig, 'w') as f_out:
         call(['paste', lines, biltrans], stdout=f_out, stderr=log)
