@@ -307,7 +307,7 @@ def non_parallel_training(config, cache_dir, log):
     sl_tagged = os.path.join(
         cache_dir, f"{config['CORPUS']}.tagged.{config['SL']}")
     lines = os.path.join(cache_dir, f"{config['CORPUS']}.lines")
-    tl_lm = f"cache-{config['SL']}-{config['TL']}/{config['CORPUS']}.{config['TL']}.lm"
+    tl_lm = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.{config['TL']}.lm"
     biltrans = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.biltrans")
     ambig = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ambig")
     multi_trimmed = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.multi-trimmed")
@@ -323,6 +323,13 @@ def non_parallel_training(config, cache_dir, log):
             print(f"(re)move {rules} and re-run lexical_training.py")
             exit(1)
         os.remove(rules)
+
+    if 'TL_MODEL' not in config:
+        if os.path.isfile(tl_lm):
+            if not query(f"Do you want to overwrite '{tl_lm}'"):
+                print(f"(re)move {tl_lm} or pass the lang model as input and re-run lexical_training.py")
+                exit(1)
+            os.remove(rules)
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = len(corpus_sl.readlines())
@@ -372,7 +379,7 @@ def non_parallel_training(config, cache_dir, log):
         tl_lm = config['TL_MODEL']
     else:
         call([os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh'), '-i', config['CORPUS_TL'], '-o', 
-                tl_lm+'.gz', '-t', 'tmp'], stdout=log, stderr=log)
+                tl_lm+'.gz', '-t', 'tmp'], stderr=log)
 
         with gzip.open(tl_lm+'.gz', 'rb') as f_in, open(tl_lm, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
