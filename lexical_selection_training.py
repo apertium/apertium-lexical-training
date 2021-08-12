@@ -312,7 +312,7 @@ def non_parallel_training(config, cache_dir, log):
     ambig = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ambig")
     multi_trimmed = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.multi-trimmed")
     ranked = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ranked")
-    annotated = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.annotated")
+    # annotated = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.annotated")
     lex_freq = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.freq")
     ngrams = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams")
     patterns = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.patterns")
@@ -351,7 +351,7 @@ def non_parallel_training(config, cache_dir, log):
     
     # removing lines with no analyses
     with open(lines, 'w') as f:
-        call(['seq', '1', str(training_lines)],
+        call(['seq', '0', str(training_lines-1)],
              stdout=f, stderr=log)
 
     clean_tagged = os.path.join(
@@ -422,20 +422,20 @@ def non_parallel_training(config, cache_dir, log):
             ['irstlm-ranker', tl_lm, multi_trimmed, '-f']]
         pipe(cmds, f_in, f_out, log).wait()
 
-    with open(annotated, 'w') as f_out:
-        call(['paste', multi_trimmed, ranked], stdout=f_out, stderr=log)
+    # with open(annotated, 'w') as f_out:
+    #     call(['paste', multi_trimmed, ranked], stdout=f_out, stderr=log)
     
     # extract frac freq
     mod = import_module('biltrans-extract-frac-freq')
     extract_frac_freq = getattr(mod, 'biltrans_extract_frac_freq')
     with open(lex_freq, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        extract_frac_freq(ambig, annotated)
+        extract_frac_freq(ambig, ranked)
 
     # ngrams
     mod = import_module('biltrans-count-patterns-ngrams')
     count_patterns_ngrams = getattr(mod, 'biltrans_count_patterns_ngrams')
     with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        count_patterns_ngrams(lex_freq, ambig, annotated)
+        count_patterns_ngrams(lex_freq, ambig, ranked)
 
     # patterns
     mod = import_module('ngram-pruning-frac')
