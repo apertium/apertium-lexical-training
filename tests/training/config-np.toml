@@ -29,7 +29,7 @@ CORPUS_TL = "tests/training/test.spa"
 LANG_DATA = "apertium-eng-spa"
 
 # number of lines to be trained on (do not enclose in quotes)
-TRAINING_LINES = 100
+TRAINING_LINES = 10
 
 # max number of rules
 MAX_RULES = 3

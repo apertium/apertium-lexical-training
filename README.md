@@ -33,6 +33,7 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
   args:
     CONFIG_FILE : optional, default='config.toml'
   ```
+  Note: Enter `IS_PARALLEL = true` for parallel corpora `false` for non-parallel corpora
 
 ## tests
 
