@@ -308,7 +308,7 @@ def non_parallel_training(config, cache_dir, log):
         cache_dir, f"{config['CORPUS']}.tagged.{config['SL']}")
     lines = os.path.join(cache_dir, f"{config['CORPUS']}.lines")
     tl_lm = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.{config['TL']}.lm"
-    biltrans = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.biltrans")
+    # biltrans = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.biltrans")
     ambig = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ambig")
     multi_trimmed = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.multi-trimmed")
     ranked = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ranked")
@@ -405,16 +405,12 @@ def non_parallel_training(config, cache_dir, log):
         config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
 
     with open(sl_tagged) as f_in:
-        with open(biltrans, 'w') as f_out:
-            call(['multitrans', '-b', '-t', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
+        with open(ambig, 'w') as f_out:
+            call(['multitrans', '-b', '-t', '-n', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
 
         f_in.seek(0)
         with open(multi_trimmed, 'w') as f_out:
-            call(['multitrans', '-m', '-t', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
-
-    with open(ambig, 'w') as f_out:
-        call(['paste', lines, biltrans], stdout=f_out, stderr=log)
-
+            call(['multitrans', '-m', '-t', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
     
     with open(multi_trimmed) as f_in, open(ranked, 'w') as f_out:
         cmds = [['apertium-transfer', '-b', t1x, t1x_bin], ['apertium-interchunk', t2x, t2x_bin], 
