@@ -431,7 +431,7 @@ def non_parallel_training(config, cache_dir, log):
     mod = import_module('biltrans-count-patterns-ngrams')
     count_patterns_ngrams = getattr(mod, 'biltrans_count_patterns_ngrams')
     with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        count_patterns_ngrams(lex_freq, ambig, ranked)
+        count_patterns_ngrams(ambig, ranked)
 
     # patterns
     mod = import_module('ngram-pruning-frac')
