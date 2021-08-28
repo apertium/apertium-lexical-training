@@ -1,12 +1,12 @@
 # apertium-lexical-training
 
-The procedure for lexical selection training is a bit messy, with various scripts involved that require lots of manual tweaking, and many third party tools to be installed, e.g. fast_align, yasmet, etc. The goal of this task is to make the training procedure as streamlined and user-friendly as possible
+The procedure for lexical selection training has been a bit messy, with various scripts involved that require lots of manual tweaking, and many third party tools to be installed, e.g. fast_align, yasmet, etc. The goal of this project is to make the training procedure as streamlined and user-friendly as possible.
 
-for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/User-friendly_lexical_selection_training
+For more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/User-friendly_lexical_selection_training
 
-## requirements
+## Requirements
 
-**parallel corpora:**
+**Parallel corpora:**
 
 - [parallel corpus](https://wiki.apertium.org/wiki/Corpora)
 - [apertium-core](https://wiki.apertium.org/wiki/Installation) (install apertium-lex-tools with yasmet)
@@ -14,7 +14,7 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
 - python dependencies in [requirements.txt](requirements.txt)
 
-**non-parallel corpora:**
+**Non-parallel corpora:**
 - [non-parallel corpus](https://wiki.apertium.org/wiki/Corpora)
 - [apertium-core](https://wiki.apertium.org/wiki/Installation)
 - [language pair](https://wiki.apertium.org/wiki/List_of_language_pairs) (install locally)
@@ -22,7 +22,7 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
 - python dependencies in [requirements.txt](requirements.txt)
 
 
-## how to use
+## How to use
 
 - install the requirements and download or clone this repo (`git clone https://github.com/vivekvardhanadepu/apertium-lexical-training.git`)
 - create config.toml and provide tools' and corpus' paths in it (for ref, see [config.toml.example](config.toml.example))
@@ -35,11 +35,13 @@ for more, read https://wiki.apertium.org/wiki/Ideas_for_Google_Summer_of_Code/Us
   ```
   Note: Enter `IS_PARALLEL = true` for parallel corpora `false` for non-parallel corpora
 
-## tests
+## Tests
 
-This folder contains scripts and data for automated testing of the training scripts
+This folder contains scripts and data for automated testing of the training scripts. It is run as a Github workflow.
 
-## references
+## References
+
+This project was started as part of Google Summer of Code 2021 (complete work submission: https://apertium.projectjj.com/gsoc2021/vivekvardhanadepu/vivekvardhanadepu.html ).
 
 <a id="1">[1]</a>
 Philipp Koehn.
