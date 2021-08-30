@@ -31,7 +31,7 @@ LANG_DATA = "../apertium-eng-spa"
 # number of lines to be trained on (do not enclose in quotes)
 TRAINING_LINES = 100
 
-# fast align build folder[not required for non-parallel training]
+# fast_align build folder [not required for non-parallel training]
 FAST_ALIGN = "../fast_align/build/fast_align"
 
 # max number of rules
@@ -40,5 +40,5 @@ MAX_RULES = 3
 # crisphold
 CRISPHOLD = 1.5
 
-# TL binary language model(.lm or .blm)[not required for parallel training]
+# TL binary language model (.lm or .blm) [not required for parallel training]
 TL_MODEL = "europarl-v7.eng-spa.spa.lm"
