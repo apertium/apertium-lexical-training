@@ -26,6 +26,9 @@ If you have don't have a parallel corpus, you can still get useful rules out of 
 - [IRSTLM](https://wiki.apertium.org/wiki/IRSTLM)
 - python dependencies in [requirements.txt](requirements.txt)
 
+**Optional dependencies:**
+
+- `pv` – gives you a progress bar for some of the slower steps
 
 ### Installing requirements on Ubuntu
 
@@ -34,7 +37,7 @@ developing a language pair – if not, see
 [http://wiki.apertium.org/wiki/Ubuntu](http://wiki.apertium.org/wiki/Ubuntu).
 
 ```
-sudo apt install -y irstlm
+sudo apt install -y irstlm pv
 ```
 
 The python dependencies aren't currently packaged for Ubuntu
