@@ -12,7 +12,6 @@ from clean_corpus import clean_corpus
 from importlib import import_module
 from contextlib import redirect_stdout, redirect_stderr
 from typing import List
-import shutil
 
 
 def query(question, default="yes"):
