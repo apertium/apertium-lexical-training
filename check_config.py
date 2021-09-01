@@ -29,6 +29,9 @@ def irstlm_path():
 
 def get_modes(lang_data):
     modesfile = os.path.join(lang_data, 'modes.xml')
+    if not os.path.isfile(modesfile):
+        print(f"'{modesfile}' doesn't exist, check that LANG_DATA points to an apertium language pair checkout.")
+        return None
     return ET.parse(modesfile)
 
 
@@ -39,7 +42,7 @@ def get_autobil(modes, lang_data, pair):
     if found:
         return os.path.join(lang_data, found[0])
     else:
-        print(f"Couldn't find '{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
+        print(f"Couldn't find mode with name='{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
               + f"provide a valid directory or to install, follow {langs_url}")
 
 
@@ -69,27 +72,23 @@ def check_config(config_filename):
                 f"'{config['CORPUS_TL']}'(CORPUS_TL) is not a file, provide a valid file or \nto download, look {corpora_url}\n")
             misconfigured = True
 
+    modes = None
     if not os.path.isdir(config['LANG_DATA']):
         print(
             f"'{config['LANG_DATA']}'(LANG_DATA) is not a directory, provide a valid directory or \nto install, follow {langs_url}\n")
         misconfigured = True
     else:
-        ls_langdata = os.listdir(config['LANG_DATA'])
         modes = get_modes(config['LANG_DATA'])
-        sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
-        tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
-        if not sl_tl_autobil:
+        if not modes:
             misconfigured = True
-        if not tl_sl_autobil:
-            misconfigured = True
-        if sl_tl_autobil and not os.path.exists(sl_tl_autobil):
-            print(f"'{sl_tl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
-                  + f"provide a valid directory or to install, follow {langs_url}")
-            misconfigured = True
-        if tl_sl_autobil and not os.path.exists(tl_sl_autobil):
-            print(f"'{tl_sl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
-                  + f"provide a valid directory or to install, follow {langs_url}")
-            misconfigured = True
+        else:
+            sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
+            if not sl_tl_autobil:
+                misconfigured = True
+            if sl_tl_autobil and not os.path.exists(sl_tl_autobil):
+                print(f"'{sl_tl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
+                    + f"provide a valid directory or to install, follow {langs_url}")
+                misconfigured = True
 
     apertium_present = False
     for path in os.environ["PATH"].split(os.pathsep):
@@ -130,6 +129,15 @@ def check_config(config_filename):
                 print(
                     f"'{config['FAST_ALIGN']}'(FAST_ALIGN) is not a file, provide a valid executable or \nto install, follow {fast_align_url}\n")
                 misconfigured = True
+
+            if modes:
+                tl_sl_autobil = get_autobil(get_modes(config['LANG_DATA']), config['LANG_DATA'], config['REVERSE_PAIR'])
+                if not tl_sl_autobil:
+                    misconfigured = True
+                if tl_sl_autobil and not os.path.exists(tl_sl_autobil):
+                    print(f"'{tl_sl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
+                          + f"provide a valid directory or to install, follow {langs_url}")
+                    misconfigured = True
 
             yasmet_present = False
             for path in os.environ["PATH"].split(os.pathsep):
