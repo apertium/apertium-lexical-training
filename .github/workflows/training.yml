@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get -qfy install python3-pip
           pip3 install -r requirements.txt
-          
+
       - name: Parallel
         run: "! python3 check_config.py tests/training/config.toml"
 
@@ -73,10 +73,13 @@ jobs:
         run: |
           sudo apt-get -qfy install python3-pip
           pip3 install -r requirements.txt
-          
+
       - name: Training
-        run: python3 lexical_selection_training.py tests/training/config.toml
-    
+        run: |
+          python3 lexical_selection_training.py tests/training/config.toml
+          echo "europarl-v7.eng-spa.ngrams-lm-1.lrx contains:"
+          cat europarl-v7.eng-spa.ngrams-lm-1.lrx
+
   non_parallel_training:
     name: non-parallel corpora training
     runs-on: ubuntu-latest
@@ -88,7 +91,7 @@ jobs:
           sudo apt-get -qy update
           sudo apt-get -qfy install wget ca-certificates
           wget -q https://apertium.projectjj.com/apt/install-nightly.sh -O - | sudo bash
-          sudo apt-get -qfy install --no-install-recommends apertium-all-dev
+          sudo apt-get -qfy install --no-install-recommends apertium-all-dev irstlm
 
       - name: Checking out apertium-eng-spa
         uses: actions/checkout@v2
@@ -108,22 +111,8 @@ jobs:
           sudo apt-get -qfy install python3-pip
           pip3 install -r requirements.txt
 
-      - name: Checking out IRSTLM
-        uses: actions/checkout@v2
-        with:
-          repository: irstlm-team/irstlm
-          path: irstlm
-
-      - name: Installing IRSTLM
-        working-directory: irstlm
-        run: |
-          sed -i 's/isystem/I/' src/Makefile.am
-          sh regenerate-makefiles.sh
-          ./configure
-          make -j4 VERBOSE=1 V=1
-          sudo make install
-        
       - name: Training
         run: |
-          export IRSTLM="/usr/local"
           python3 lexical_selection_training.py tests/training/config-np.toml
+          echo "europarl-v7.eng-spa.ngrams-lm-np.lrx contains:"
+          cat europarl-v7.eng-spa.ngrams-lm-np.lrx
