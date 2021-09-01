@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # lexical training script
 import os
 import sys
@@ -5,10 +7,11 @@ import gzip
 import shutil
 
 from subprocess import Popen, PIPE, call
-from check_config import check_config
+from check_config import check_config, irstlm_path, get_modes, get_autobil
 from clean_corpus import clean_corpus
 from importlib import import_module
 from contextlib import redirect_stdout, redirect_stderr
+from typing import List
 
 
 def query(question, default="yes"):
@@ -89,17 +92,17 @@ def parallel_training(config, cache_dir, log):
         cache_dir, f"{config['CORPUS']}.lex.{config['SL']}-{config['TL']}")
     ngrams = os.path.join(
         cache_dir, 'ngrams')
-    events = os.path.join(
-        cache_dir, 'events')
-    events_trimmed = os.path.join(
-        cache_dir, 'events.trimmed')
-    lambdas = os.path.join(
-        cache_dir, 'lambdas')
-    rules_all = os.path.join(
-        cache_dir, 'rules_all.txt')
-    ngrams_all = os.path.join(
-        cache_dir, 'ngrams_all.txt')
-    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm-{MIN}.xml"
+    # events = os.path.join(
+    #     cache_dir, 'events')
+    # events_trimmed = os.path.join(
+    #     cache_dir, 'events.trimmed')
+    # lambdas = os.path.join(
+    #     cache_dir, 'lambdas')
+    # rules_all = os.path.join(
+    #     cache_dir, 'rules_all.txt')
+    # ngrams_all = os.path.join(
+    #     cache_dir, 'ngrams_all.txt')
+    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm-{MIN}.lrx"
 
     if os.path.isfile(rules):
         if not query(f"Do you want to overwrite '{rules}'"):
@@ -188,11 +191,10 @@ def parallel_training(config, cache_dir, log):
     tmp2 = 'tmp2'
 
     # phrasetable
+    modes = get_modes(config['LANG_DATA'])
     with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
-        sl_tl_autobil = os.path.join(
-            config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
-        tl_sl_autobil = os.path.join(
-            config['LANG_DATA'], f"{config['TL']}-{config['SL']}.autobil.bin")
+        sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
+        tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
         with open(tl_tagged, 'r') as f:
             # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
             call(['process-tagger-output', tl_sl_autobil],
@@ -237,6 +239,7 @@ def parallel_training(config, cache_dir, log):
     ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
         ngrams_to_rules(ngrams, config['CRISPHOLD'])
+    return rules
 
     # # count patterns
     # mod = import_module('ngram-count-patterns-maxent2')
@@ -316,7 +319,7 @@ def non_parallel_training(config, cache_dir, log):
     lex_freq = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.freq")
     ngrams = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams")
     patterns = os.path.join(cache_dir, f"{config['CORPUS']}.{config['SL']}-{config['TL']}.patterns")
-    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm-np.xml"
+    rules = f"{config['CORPUS']}.{config['SL']}-{config['TL']}.ngrams-lm-np.lrx"
 
     if os.path.isfile(rules):
         if not query(f"Do you want to overwrite '{rules}'"):
@@ -348,7 +351,7 @@ def non_parallel_training(config, cache_dir, log):
             ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log).wait()
-    
+
     # removing lines with no analyses
     with open(lines, 'w') as f:
         call(['seq', '0', str(training_lines-1)],
@@ -374,22 +377,20 @@ def non_parallel_training(config, cache_dir, log):
 
     os.remove(clean_tagged)
 
-
     if 'TL_MODEL' in config:
         tl_lm = config['TL_MODEL']
     else:
-        call([os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh'), '-i', config['CORPUS_TL'], '-o', 
-                tl_lm+'.gz', '-t', 'tmp'], stderr=log)
+        call([os.path.join(irstlm_path(), 'bin/build-lm.sh'), '-i', config['CORPUS_TL'], '-o',
+              tl_lm+'.gz', '-t', 'tmp'], stderr=log)
 
         with gzip.open(tl_lm+'.gz', 'rb') as f_in, open(tl_lm, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-        
+
         os.remove(tl_lm+'.gz')
         # os.remove('tmp_tl')
 
-
-    sl_tl_autobil = os.path.join(
-            config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
+    modes = get_modes(config['LANG_DATA'])
+    sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
     t1x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t1x")
     t2x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t2x")
     t3x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t3x")
@@ -411,16 +412,19 @@ def non_parallel_training(config, cache_dir, log):
         f_in.seek(0)
         with open(multi_trimmed, 'w') as f_out:
             call(['multitrans', '-m', '-t', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
-    
+
     with open(multi_trimmed) as f_in, open(ranked, 'w') as f_out:
-        cmds = [['apertium-transfer', '-b', t1x, t1x_bin], ['apertium-interchunk', t2x, t2x_bin], 
-            ['apertium-postchunk', t3x, t3x_bin], ['lt-proc', '-g', sl_tl_autogen], ['lt-proc', '-p', sl_tl_autopgen],
-            ['irstlm-ranker', tl_lm, multi_trimmed, '-f']]
+        cmds = [['apertium-transfer', '-b', t1x, t1x_bin],
+                ['apertium-interchunk', t2x, t2x_bin],
+                ['apertium-postchunk', t3x, t3x_bin],
+                ['lt-proc', '-g', sl_tl_autogen],
+                ['lt-proc', '-p', sl_tl_autopgen],
+                ['irstlm-ranker', tl_lm, multi_trimmed, '-f']]
         pipe(cmds, f_in, f_out, log).wait()
 
     # with open(annotated, 'w') as f_out:
     #     call(['paste', multi_trimmed, ranked], stdout=f_out, stderr=log)
-    
+
     # extract frac freq
     mod = import_module('biltrans-extract-frac-freq')
     extract_frac_freq = getattr(mod, 'biltrans_extract_frac_freq')
@@ -438,12 +442,14 @@ def non_parallel_training(config, cache_dir, log):
     ngram_pruning_frac = getattr(mod, 'ngram_pruning_frac')
     with open(patterns, 'w') as f, redirect_stdout(f), redirect_stderr(log):
         ngram_pruning_frac(lex_freq, ngrams)
- 
+
     # extracting rules
     mod = import_module('ngrams-to-rules')
     ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
         ngrams_to_rules(patterns, config['CRISPHOLD'])
+    return rules
+
 
 def main(config_file):
     print("validating configuration....")
@@ -478,10 +484,10 @@ def main(config_file):
 
     with open(log, 'a') as log_file:
         if config['IS_PARALLEL']:
-            parallel_training(config, cache_dir, log_file)
+            rules = parallel_training(config, cache_dir, log_file)
         else:
-            non_parallel_training(config, cache_dir, log_file)
-    print("training complete!!")
+            rules = non_parallel_training(config, cache_dir, log_file)
+    print(f"Training complete! Generated lrx file: {rules}")
 
 
 if __name__ == '__main__':

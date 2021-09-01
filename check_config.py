@@ -1,8 +1,13 @@
+#!/usr/bin/env python3
+
 # parses the config, check if the tools are present
 
 from tomlkit import parse, dumps
 import os
 import sys
+import re
+import xml.etree.ElementTree as ET
+
 
 # urls of the required tools and data
 corpora_url = "https://wiki.apertium.org/wiki/Corpora"
@@ -12,6 +17,30 @@ langs_url = "https://wiki.apertium.org/wiki/List_of_language_pairs"
 apertium_url = "https://wiki.apertium.org/wiki/Installation"
 yasmet_url = "https://wiki.apertium.org/wiki/Using_weights_for_ambiguous_rules"
 irstlm_url = "https://wiki.apertium.org/wiki/IRSTLM"
+
+
+def irstlm_path():
+    """Fallback to default Debian installation path if not in environ"""
+    if 'IRSTLM' in os.environ:
+        return os.environ['IRSTLM']
+    else:
+        return '/usr/lib/irstlm'
+
+
+def get_modes(lang_data):
+    modesfile = os.path.join(lang_data, 'modes.xml')
+    return ET.parse(modesfile)
+
+
+def get_autobil(modes, lang_data, pair):
+    found = [n for x in modes.findall(f'.//mode[@name="{pair}"]//file')
+             for n in [x.attrib['name']]
+             if re.search('autobil[.]bin$', n)]
+    if found:
+        return os.path.join(lang_data, found[0])
+    else:
+        print(f"Couldn't find '{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
+              + f"provide a valid directory or to install, follow {langs_url}")
 
 
 def check_config(config_filename):
@@ -45,14 +74,22 @@ def check_config(config_filename):
             f"'{config['LANG_DATA']}'(LANG_DATA) is not a directory, provide a valid directory or \nto install, follow {langs_url}\n")
         misconfigured = True
     else:
-        modules = []
-        modules.append(f"{config['SL']}-{config['TL']}.autobil.bin")
-        modules.append(f"{config['TL']}-{config['SL']}.autobil.bin")
-        for module in modules:
-            if module not in os.listdir(config['LANG_DATA']):
-                print(f"'{module}' is not in '{config['LANG_DATA']}'(LANG_DATA), \
-                    provide a valid directory or \nto install, follow {langs_url}\n")
-                misconfigured = True
+        ls_langdata = os.listdir(config['LANG_DATA'])
+        modes = get_modes(config['LANG_DATA'])
+        sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
+        tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
+        if not sl_tl_autobil:
+            misconfigured = True
+        if not tl_sl_autobil:
+            misconfigured = True
+        if sl_tl_autobil and not os.path.exists(sl_tl_autobil):
+            print(f"'{sl_tl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
+                  + f"provide a valid directory or to install, follow {langs_url}")
+            misconfigured = True
+        if tl_sl_autobil and not os.path.exists(tl_sl_autobil):
+            print(f"'{tl_sl_autobil}' is not in '{config['LANG_DATA']}' (LANG_DATA), "
+                  + f"provide a valid directory or to install, follow {langs_url}")
+            misconfigured = True
 
     apertium_present = False
     for path in os.environ["PATH"].split(os.pathsep):
@@ -161,14 +198,16 @@ def check_config(config_filename):
                             provide a valid directory or \nto install, follow {langs_url}\n")
                         misconfigured = True
 
-            if not 'IRSTLM' in os.environ:
-                print(
-                    f"IRSTLM is either not installed or not defined as an environment variable, see {irstlm_url}\n")
-                misconfigured = True
-            else:
-                if not os.path.isfile(os.path.join(os.environ['IRSTLM'], 'bin/build-lm.sh')):
+            if not os.path.isfile(os.path.join(irstlm_path(), 'bin/build-lm.sh')):
+                if 'IRSTLM' not in os.environ:
                     print(
-                        f"'build-lm.sh' is not present in $IRSTLM('{os.environ['IRSTLM']}'), see {irstlm_url}\n")
+                        "IRSTLM doesn't seem to be installed to /usr/lib/irstlm,"
+                        + " couldn't find /usr/lib/bin/build-lm.sh (if you installed"
+                        + f" it elsewhere, set the environment variable IRSTLM), see {irstlm_url}\n")
+                    misconfigured = True
+                else:
+                    print(
+                        f"'bin/build-lm.sh' is not present in $IRSTLM ('{os.environ['IRSTLM']}'), see {irstlm_url}\n")
                     misconfigured = True
 
             multitrans_present = False
