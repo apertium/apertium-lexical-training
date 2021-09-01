@@ -29,6 +29,10 @@ If you have don't have a parallel corpus, you can still get useful rules out of 
 
 ### Installing requirements on Ubuntu
 
+We assume you've already got Tino's nightly repo set up, since you're
+developing a language pair – if not, see
+[http://wiki.apertium.org/wiki/Ubuntu](http://wiki.apertium.org/wiki/Ubuntu).
+
 ```
 sudo apt install -y irstlm
 ```
