@@ -380,6 +380,10 @@ def non_parallel_training(config, cache_dir, log):
     if 'TL_MODEL' in config:
         tl_lm = config['TL_MODEL']
     else:
+        print("Making a language model of " + config['CORPUS_TL']
+              + " using IRSTLM from " + irstlm_path()
+              + " and temporary files in ./tmp/")
+        os.environ['IRSTLM'] = irstlm_path()
         call([os.path.join(irstlm_path(), 'bin/build-lm.sh'), '-i', config['CORPUS_TL'], '-o',
               tl_lm+'.gz', '-t', 'tmp'], stderr=log)
 
