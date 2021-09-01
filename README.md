@@ -50,9 +50,9 @@ it's "next to" this project):
 ```
 sudo apt install -y libgoogle-perftools-dev libsparsehash-dev
 
-git clone https://github.com/clab/fast_align ../fast_align
-mkdir -p ../fast_align/build
-cd ../fast_align/build
+git clone https://github.com/clab/fast_align
+mkdir -p fast_align/build
+cd fast_align/build
 cmake ..
 make -j
 ```

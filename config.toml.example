@@ -1,44 +1,47 @@
-# configuration for lexical training
-# Note: one of CORPUS_TL or TL_MODEL(binary language model) is required for non-parallel corpora training. If both are specified, CORPUS_TL is ignored
+# Example configuration for lexical selection rule training
 
-# parallel(true) or non-parallel(false)
+# Note: one of CORPUS_TL or TL_MODEL (binary language model) is
+# required for non-parallel corpora training. If both are specified,
+# CORPUS_TL is ignored.
+
+# true for parallel training, false if only training on monolingual TL corpus:
 IS_PARALLEL = false
 
-# corpus name
+# Corpus name (for naming the cache folder and output file):
 CORPUS = "europarl-v7"
 
-# source language[it should match with the language codes of apertium]
+# Source language (should match the language codes used in Apertium):
 SL = "eng"
 
-# target language[it should match with the language codes of apertium]
+# Target language (should match the language codes used in Apertium):
 TL = "spa"
 
-# language pair code(as per apertium language codes)
+# Apertium language pair mode:
 PAIR = "eng-spa"
 
-# source corpus
+# Apertium language pair mode for the reverse direction, only needed for parallel training:
+REVERSE_PAIR = "spa-eng"
+
+# Source corpus file name (absolute path or relative to this folder):
 CORPUS_SL = "europarl-v7.eng-spa.eng"
 
-# target corpus
+# Target corpus file name (absolute path or relative to this folder):
 CORPUS_TL = "europarl-v7.eng-spa.spa"
 
-# apertium-lex-tools scripts
-# LEX_TOOLS = "../apertium-lex-tools/scripts"
-
-# apertium language data
+# Apertium language pair checkout:
 LANG_DATA = "../apertium-eng-spa"
 
-# number of lines to be trained on (do not enclose in quotes)
-TRAINING_LINES = 100
+# Number of lines to be trained on (do not enclose in quotes)
+TRAINING_LINES = 1000
 
-# fast_align build folder [not required for non-parallel training]
-FAST_ALIGN = "../fast_align/build/fast_align"
+# fast_align build folder (only required for parallel training)
+FAST_ALIGN = "fast_align/build/fast_align"
 
-# max number of rules
+# Max number of rules
 MAX_RULES = 3
 
-# crisphold
+# Crisphold
 CRISPHOLD = 1.5
 
-# TL binary language model (.lm or .blm) [not required for parallel training]
+# TL binary language model (.lm or .blm; not required for parallel training, will be used instead of CORPUS_TL if specified)
 TL_MODEL = "europarl-v7.eng-spa.spa.lm"
