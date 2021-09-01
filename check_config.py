@@ -290,7 +290,7 @@ def check_config(config_filename):
     if misconfigured:
         exit(1)
     else:
-        print("prerequisites are properly installed")
+        print("Prerequisites are properly installed.")
 
     return config
 

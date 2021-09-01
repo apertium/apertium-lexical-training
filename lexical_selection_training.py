@@ -12,6 +12,7 @@ from clean_corpus import clean_corpus
 from importlib import import_module
 from contextlib import redirect_stdout, redirect_stderr
 from typing import List
+import shutil
 
 
 def query(question, default="yes"):
@@ -44,10 +45,11 @@ def query(question, default="yes"):
             print("Please respond with 'yes', 'no', 'y' or 'n'")
 
 
-def pipe(cmds, firstin, lastout, stderr):
+def pipe(cmds, firstin, lastout, stderr, expected_lines=None):
     """Open a list of commands as a simple shell pipe, using the same stderr
     for all commands.
     Returns None if the command list is empty.
+    If 'expected_lines' is given and 'pv' is installed, we get a progress bar.
     Example usage:
     >>> cmds = [['yes', 'olleh'], ['head', '-2'], ['rev']]
     >>> with open('/tmp/foo', 'w') as outf:
@@ -59,12 +61,17 @@ def pipe(cmds, firstin, lastout, stderr):
     """
     if cmds == []:
         return
+    lasterr = stderr
+    if expected_lines and shutil.which("pv"):
+        cmds += [['pv', '-l', '-s', str(expected_lines)]]
+        lasterr = sys.stderr
     procs = []                  # type: List[Popen]
     for i in range(len(cmds)):
         cmd = cmds[i]
         inp = procs[i-1].stdout if i > 0 else firstin
         outp = PIPE if i+1 < len(cmds) else lastout
-        procs.append(Popen(cmd, stdin=inp, stdout=outp, stderr=stderr))
+        errp = stderr if i+1 < len(cmds) else lasterr
+        procs.append(Popen(cmd, stdin=inp, stdout=outp, stderr=errp))
     return procs[-1]
 
 
@@ -118,24 +125,25 @@ def parallel_training(config, cache_dir, log):
         else:
             training_lines = config['TRAINING_LINES']
 
-    print(f"loading {training_lines} lines from the corpora")
+    print(f"Using {training_lines} lines from the corpora")
 
-    # tagging the source side corpus
-    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
-            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
+    print("Tagging the source side corpus ...")
+    cmds = [['head', '-n', str(training_lines)],
+            ['apertium', '-d', config['LANG_DATA'],
              f"{config['SL']}-{config['TL']}-tagger"],
             ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
-        pipe(cmds, inp, outp, log).wait()
+        pipe(cmds, inp, outp, log, training_lines).wait()
 
-    # tagging the target side corpus
-    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
-            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
+    print("Tagging the target side corpus ...")
+    cmds = [['head', '-n', str(training_lines)],
+            ['apertium', '-d', config['LANG_DATA'],
              f"{config['TL']}-{config['SL']}-tagger"],
             ['apertium-pretransfer']]
     with open(config['CORPUS_TL']) as inp, open(tl_tagged, 'w') as outp:
-        pipe(cmds, inp, outp, log).wait()
+        pipe(cmds, inp, outp, log, training_lines).wait()
 
+    print("Combining tagged corpora ...")
     # removing lines with no analyses
     with open(lines, 'w') as f:
         call(['seq', '1', str(training_lines)],
@@ -166,15 +174,16 @@ def parallel_training(config, cache_dir, log):
 
     os.remove(clean_tagged)
 
-    # aligning the parallel corpus
     with open(tagged_merged, 'w') as f:
         with open(os.devnull, 'r') as f1:
             call(['paste', '-d', '||| ', tl_tagged, '-', '-', '-',
                   sl_tagged], stdin=f1, stdout=f, stderr=log)
 
+    print("Aligning parallel corpus ...")
     with open(alignment, 'w') as f:
-        call([config['FAST_ALIGN'], '-i', tagged_merged, '-d',
-              '-o', '-v'], stdout=f, stderr=log)
+        call([config['FAST_ALIGN'], '-i', tagged_merged, '-d', '-o', '-v'],
+             stdout=f,
+             stderr=log)
 
     with open(sl_tagged, 'r+') as f:
         data = f.read()
@@ -190,7 +199,7 @@ def parallel_training(config, cache_dir, log):
     tmp1 = 'tmp1'
     tmp2 = 'tmp2'
 
-    # phrasetable
+    print("Processing tagger output and creating phrase table ...")
     modes = get_modes(config['LANG_DATA'])
     with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
         sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
@@ -216,6 +225,7 @@ def parallel_training(config, cache_dir, log):
     os.remove(tmp1)
     os.remove(tmp2)
 
+    print("Turning aligned ngrams into rules ...")
     # extract sentences
     mod = import_module('extract-sentences')
     extract_sentences = getattr(mod, 'extract_sentences')
@@ -342,15 +352,13 @@ def non_parallel_training(config, cache_dir, log):
         else:
             training_lines = config['TRAINING_LINES']
 
-    print(f"loading {training_lines} lines from the corpora")
-
-    # tagging the source side corpus
-    cmds = [['head', '-n', str(training_lines)],  # ['apertium-destxt'],
-            ['apertium', '-d', config['LANG_DATA'],  # '-f', 'none',
+    print(f"Tagging {training_lines} lines from the source side corpus ...")
+    cmds = [['head', '-n', str(training_lines)],
+            ['apertium', '-d', config['LANG_DATA'],
              f"{config['SL']}-{config['TL']}-tagger"],
             ['apertium-pretransfer']]
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
-        pipe(cmds, inp, outp, log).wait()
+        pipe(cmds, inp, outp, log, training_lines).wait()
 
     # removing lines with no analyses
     with open(lines, 'w') as f:
@@ -380,7 +388,7 @@ def non_parallel_training(config, cache_dir, log):
     if 'TL_MODEL' in config:
         tl_lm = config['TL_MODEL']
     else:
-        print("Making a language model of " + config['CORPUS_TL']
+        print("Making a language model from all lines of " + config['CORPUS_TL']
               + " using IRSTLM from " + irstlm_path()
               + " and temporary files in ./tmp/")
         os.environ['IRSTLM'] = irstlm_path()
@@ -400,11 +408,13 @@ def non_parallel_training(config, cache_dir, log):
     print("Running multitrans ...")
     with open(sl_tagged) as f_in:
         with open(ambig, 'w') as f_out:
-            call(['multitrans', '-b', '-t', '-n', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
+            cmds = [['multitrans', '-b', '-t', '-n', '-f', sl_tl_autobil]]
+            pipe(cmds, f_in, f_out, log)
 
         f_in.seek(0)
         with open(multi_trimmed, 'w') as f_out:
-            call(['multitrans', '-m', '-t', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
+            cmds = [['multitrans', '-m', '-t', '-f', sl_tl_autobil]]
+            pipe(cmds, f_in, f_out, log)
 
     print("Running irstlm-ranker on mode after biltrans ...")
     with open(multi_trimmed) as f_in, open(ranked, 'w') as f_out:
@@ -414,6 +424,7 @@ def non_parallel_training(config, cache_dir, log):
     # with open(annotated, 'w') as f_out:
     #     call(['paste', multi_trimmed, ranked], stdout=f_out, stderr=log)
 
+    print("Turning ranked ngrams into rules ...")
     # extract frac freq
     mod = import_module('biltrans-extract-frac-freq')
     extract_frac_freq = getattr(mod, 'biltrans_extract_frac_freq')
@@ -441,7 +452,7 @@ def non_parallel_training(config, cache_dir, log):
 
 
 def main(config_file):
-    print("validating configuration....")
+    print("Validating configuration ...")
     config = check_config(config_file)
 
     # appending lex scripts' paths to environment path
@@ -453,7 +464,7 @@ def main(config_file):
     sys.path.insert(0, '../lex-tools/scripts')
 
     # cleaning the parallel corpus i.e. removing empty sentences, sentences only with '*', '.', or '°'
-    print("cleaning corpus....")
+    # print("Cleaning corpus ...")
     # clean_corpus(config['CORPUS_SL'], config['CORPUS_TL'])
 
     cache_dir = f"cache-{config['CORPUS']}-{config['SL']}-{config['TL']}"
