@@ -128,6 +128,7 @@ def parallel_training(config, cache_dir, log):
 
     print("Tagging the source side corpus ...")
     cmds = [['head', '-n', str(training_lines)],
+            ['tr', '\\/$^@', '?'],  # clean corpus
             ['apertium', '-d', config['LANG_DATA'],
              f"{config['SL']}-{config['TL']}-tagger"],
             ['apertium-pretransfer']]
@@ -136,6 +137,7 @@ def parallel_training(config, cache_dir, log):
 
     print("Tagging the target side corpus ...")
     cmds = [['head', '-n', str(training_lines)],
+            ['tr', '\\/$^@', '?'],  # clean corpus
             ['apertium', '-d', config['LANG_DATA'],
              f"{config['TL']}-{config['SL']}-tagger"],
             ['apertium-pretransfer']]
@@ -161,14 +163,16 @@ def parallel_training(config, cache_dir, log):
 
         f0.seek(0)
         with open(sl_tagged, 'w') as f2:
-            cmds = [['cut', '-f', '2'], ['sed', 's/ /~~/g'],
-                    ['sed', 's/\$[^\^]*/$ /g']]
+            cmds = [['cut', '-f', '2'],
+                    ['sed', 's/ /~~/g'],
+                    ['sed', r's/\$[^\^]*/$ /g']]
             pipe(cmds, f0, f2, log).wait()
 
         f0.seek(0)
         with open(tl_tagged, 'w') as f2:
-            cmds = [['cut', '-f', '3'], ['sed', 's/ /~~/g'],
-                    ['sed', 's/\$[^\^]*/$ /g']]
+            cmds = [['cut', '-f', '3'],
+                    ['sed', 's/ /~~/g'],
+                    ['sed', r's/\$[^\^]*/$ /g']]
             pipe(cmds, f0, f2, log).wait()
 
     os.remove(clean_tagged)
