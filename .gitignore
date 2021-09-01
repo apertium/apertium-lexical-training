@@ -1,6 +1,8 @@
 # cache
 cache*
 __pycache__/
+.mypy_cache/
+.venv/
 
 # rules
 *.xml
@@ -16,3 +18,4 @@ europarl*
 
 # bash files
 /*.sh
+
