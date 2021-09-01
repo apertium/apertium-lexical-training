@@ -7,7 +7,7 @@ import gzip
 import shutil
 
 from subprocess import Popen, PIPE, call
-from check_config import check_config, irstlm_path, get_modes, get_autobil
+from check_config import check_config, irstlm_path, get_modes, get_autobil, get_mode_after_biltrans
 from clean_corpus import clean_corpus
 from importlib import import_module
 from contextlib import redirect_stdout, redirect_stderr
@@ -332,7 +332,7 @@ def non_parallel_training(config, cache_dir, log):
             if not query(f"Do you want to overwrite '{tl_lm}'"):
                 print(f"(re)move {tl_lm} or pass the lang model as input and re-run lexical_training.py")
                 exit(1)
-            os.remove(rules)
+            os.remove(tl_lm)
 
     with open(config['CORPUS_SL'], 'r') as corpus_sl:
         training_lines = len(corpus_sl.readlines())
@@ -391,20 +391,9 @@ def non_parallel_training(config, cache_dir, log):
 
     modes = get_modes(config['LANG_DATA'])
     sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
-    t1x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t1x")
-    t2x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t2x")
-    t3x = os.path.join(config['LANG_DATA'], f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t3x")
-    t1x_bin = os.path.join(
-        config['LANG_DATA'], f"{config['SL']}-{config['TL']}.t1x.bin")
-    t2x_bin = os.path.join(
-        config['LANG_DATA'], f"{config['SL']}-{config['TL']}.t2x.bin")
-    t3x_bin = os.path.join(
-        config['LANG_DATA'], f"{config['SL']}-{config['TL']}.t3x.bin")
-    sl_tl_autogen = os.path.join(
-        config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
-    sl_tl_autopgen = os.path.join(
-        config['LANG_DATA'], f"{config['SL']}-{config['TL']}.autobil.bin")
+    mode_after_biltrans = get_mode_after_biltrans(modes, config['LANG_DATA'], config['PAIR'])
 
+    print("Running multitrans ...")
     with open(sl_tagged) as f_in:
         with open(ambig, 'w') as f_out:
             call(['multitrans', '-b', '-t', '-n', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
@@ -413,13 +402,9 @@ def non_parallel_training(config, cache_dir, log):
         with open(multi_trimmed, 'w') as f_out:
             call(['multitrans', '-m', '-t', '-f', sl_tl_autobil], stdin=f_in, stdout=f_out, stderr=log)
 
+    print("Running irstlm-ranker on mode after biltrans ...")
     with open(multi_trimmed) as f_in, open(ranked, 'w') as f_out:
-        cmds = [['apertium-transfer', '-b', t1x, t1x_bin],
-                ['apertium-interchunk', t2x, t2x_bin],
-                ['apertium-postchunk', t3x, t3x_bin],
-                ['lt-proc', '-g', sl_tl_autogen],
-                ['lt-proc', '-p', sl_tl_autopgen],
-                ['irstlm-ranker', tl_lm, multi_trimmed, '-f']]
+        cmds = [p[0] + p[1] for p in mode_after_biltrans] + [['irstlm-ranker', tl_lm, multi_trimmed, '-f']]
         pipe(cmds, f_in, f_out, log).wait()
 
     # with open(annotated, 'w') as f_out:

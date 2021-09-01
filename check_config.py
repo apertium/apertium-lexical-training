@@ -7,6 +7,7 @@ import os
 import sys
 import re
 import xml.etree.ElementTree as ET
+from itertools import dropwhile
 
 
 # urls of the required tools and data
@@ -42,8 +43,38 @@ def get_autobil(modes, lang_data, pair):
     if found:
         return os.path.join(lang_data, found[0])
     else:
-        print(f"Couldn't find mode with name='{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
+        print(f"Couldn't find bidix bin in mode with name='{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
               + f"provide a valid directory or to install, follow {langs_url}")
+
+
+def get_transferfiles(modes, lang_data, pair):
+    found = [n for x in modes.findall(f'.//mode[@name="{pair}"]//file')
+             for n in [x.attrib['name']]
+             if re.search('[.](t[0-9]x([.]bin)?|autop?gen[.]bin)$', n)]
+    if found:
+        return [os.path.join(lang_data, f) for f in found]
+    else:
+        print(f"Couldn't find transfer files in mode with name='{pair}' in modes.xml of '{lang_data}' (LANG_DATA), "
+              + f"provide a valid directory or to install, follow {langs_url}")
+
+
+def get_mode_after_biltrans(modes, lang_data, pair):
+    """Chop the pipeline on biltrans/lexsel, return what's after those steps.
+The return value is a list of pairs of lists, one for the cmd + opts,
+one for the file arguments, e.g. (["lt-proc", "-b"], ["nob-nno.autobil.bin"])
+
+    """
+    def is_biltrans(program):
+        return any(re.search('auto(bil|lex)[.]bin$', f.attrib['name'])
+                   for f in program.findall('./file'))
+    pipeline = modes.findall(f'.//mode[@name="{pair}"]/pipeline/program')
+    after_biltrans = dropwhile(is_biltrans, dropwhile(lambda p: not is_biltrans(p), pipeline))
+
+    def to_cmd(program):
+        cmd_opts = program.attrib['name'].replace('$1', '-g').replace('$2', '-z').split()
+        file_args = [f.attrib['name'] for f in program.findall('./file')]
+        return (cmd_opts, file_args)
+    return [to_cmd(p) for p in after_biltrans]
 
 
 def check_config(config_filename):
@@ -131,7 +162,7 @@ def check_config(config_filename):
                 misconfigured = True
 
             if modes:
-                tl_sl_autobil = get_autobil(get_modes(config['LANG_DATA']), config['LANG_DATA'], config['REVERSE_PAIR'])
+                tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
                 if not tl_sl_autobil:
                     misconfigured = True
                 if tl_sl_autobil and not os.path.exists(tl_sl_autobil):
@@ -186,24 +217,15 @@ def check_config(config_filename):
                     f"apertium_lex_tools scripts are not installed, re-install apertium-lex-tools {apertium_url}\n")
                 misconfigured = True
 
-        else:
-            if os.path.isdir(config['LANG_DATA']):
-                modules = []
-                modules.append(
-                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t1x")
-                modules.append(f"{config['SL']}-{config['TL']}.t1x.bin")
-                modules.append(
-                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t2x")
-                modules.append(f"{config['SL']}-{config['TL']}.t2x.bin")
-                modules.append(
-                    f"apertium-{config['PAIR']}.{config['SL']}-{config['TL']}.t3x")
-                modules.append(f"{config['SL']}-{config['TL']}.t3x.bin")
-                modules.append(f"{config['SL']}-{config['TL']}.autogen.bin")
-                modules.append(f"{config['SL']}-{config['TL']}.autopgen.bin")
-                for module in modules:
-                    if module not in os.listdir(config['LANG_DATA']):
-                        print(f"'{module}' is not in '{config['LANG_DATA']}'(LANG_DATA), \
-                            provide a valid directory or \nto install, follow {langs_url}\n")
+        else:                   # non-parallel
+            if modes and os.path.isdir(config['LANG_DATA']):
+                mode_after_biltrans = get_mode_after_biltrans(modes, config['LANG_DATA'], config['PAIR'])
+                filepaths = (e for m in mode_after_biltrans for e in m[1])
+                for fp in filepaths:
+                    if fp not in os.listdir(config['LANG_DATA']):
+                        print(f"'{fp}' is not in '{config['LANG_DATA']}' (LANG_DATA)"
+                              + " – is the language pair compiled? Please provide a "
+                              + "valid directory or to install, follow {langs_url}")
                         misconfigured = True
 
             if not os.path.isfile(os.path.join(irstlm_path(), 'bin/build-lm.sh')):
