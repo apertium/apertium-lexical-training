@@ -26,6 +26,37 @@ If you have don't have a parallel corpus, you can still get useful rules out of 
 - [IRSTLM](https://wiki.apertium.org/wiki/IRSTLM)
 - python dependencies in [requirements.txt](requirements.txt)
 
+
+### Installing requirements on Ubuntu
+
+```
+sudo apt install -y irstlm
+```
+
+The python dependencies aren't currently packaged for Ubuntu
+etc., so to install them, you should use
+a VirtualEnv to not clutter your regular Python path:
+```
+sudo apt install python3-virtualenv
+virtualenv .venv
+source .venv/bin/activate  # you have to do this every time you want the dependencies to be available
+.venv/bin/pip3 install -r requirements.txt
+```
+
+For parallel training, you'll also need fast_align; following
+`config.toml.example` we'll check it out in the parent directory (so
+it's "next to" this project):
+
+```
+sudo apt install -y libgoogle-perftools-dev libsparsehash-dev
+
+git clone https://github.com/clab/fast_align ../fast_align
+mkdir -p ../fast_align/build
+cd ../fast_align/build
+cmake ..
+make -j
+```
+
 # Finding corpora
 
 ## Parallel corpora
@@ -67,8 +98,16 @@ that, instead of a corpus.
 
 ## How to train
 
-- Install the requirements and download or clone this repo (`git clone https://github.com/apertium/apertium-lexical-training.git`)
-- Create `config.toml` and change paths to tools and your corpus (for reference, see [config.toml.example](config.toml.example))
+- Install the requirements
+- Clone this repo<br>
+  ```
+  git clone https://github.com/apertium/apertium-lexical-training.git
+  ```
+- Create `config.toml` (for reference, see [config.toml.example](config.toml.example))
+  ```
+  cp config.toml.example config.toml
+  ```
+  - Now edit `config.toml` and give the rigth paths to tools and your corpus
   - Enter `IS_PARALLEL = true` for parallel corpora, `false` for non-parallel corpora
 - Run `lexical_training.py`<br>
   ```
