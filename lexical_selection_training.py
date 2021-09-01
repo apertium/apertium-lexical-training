@@ -456,9 +456,9 @@ def main(config_file):
     config = check_config(config_file)
 
     # appending lex scripts' paths to environment path
-    sys.path.insert(0, '/usr/share/apertium-lex-tools')
     sys.path.insert(0, '/opt/local/share/apertium-lex-tools')
     sys.path.insert(0, '/usr/local/share/apertium-lex-tools')
+    sys.path.insert(0, '/usr/share/apertium-lex-tools')  # Prefer /usr over /usr/local and /opt
 
     # remove after testing
     sys.path.insert(0, '../lex-tools/scripts')
