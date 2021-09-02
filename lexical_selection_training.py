@@ -127,20 +127,12 @@ def parallel_training(config, cache_dir, log):
     print(f"Using {training_lines} lines from the corpora")
 
     print("Tagging the source side corpus ...")
-    cmds = [['head', '-n', str(training_lines)],
-            ['tr', '\\/$^@', '?'],  # clean corpus
-            ['apertium', '-d', config['LANG_DATA'],
-             f"{config['SL']}-{config['TL']}-tagger"],
-            ['apertium-pretransfer']]
+    cmds = mk_tagger_cmds(config['LANG_DATA'], config['PAIR'], training_lines)
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log, training_lines).wait()
 
     print("Tagging the target side corpus ...")
-    cmds = [['head', '-n', str(training_lines)],
-            ['tr', '\\/$^@', '?'],  # clean corpus
-            ['apertium', '-d', config['LANG_DATA'],
-             f"{config['TL']}-{config['SL']}-tagger"],
-            ['apertium-pretransfer']]
+    cmds = mk_tagger_cmds(config['LANG_DATA'], config['REVERSE_PAIR'], training_lines)
     with open(config['CORPUS_TL']) as inp, open(tl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log, training_lines).wait()
 
@@ -208,16 +200,13 @@ def parallel_training(config, cache_dir, log):
         sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
         tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
         with open(tl_tagged, 'r') as f:
-            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
             call(['process-tagger-output', tl_sl_autobil],
                  stdin=f, stdout=f1, stderr=log)
         with open(sl_tagged, 'r') as f:
-            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
             call(['process-tagger-output', sl_tl_autobil],
                  stdin=f, stdout=f2, stderr=log)
             f.seek(0)
             with open(clean_biltrans, 'w') as f0:
-                # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
                 call(['process-tagger-output', sl_tl_autobil],
                      stdin=f, stdout=f0, stderr=log)
 
@@ -315,6 +304,15 @@ def parallel_training(config, cache_dir, log):
     #     ngrams_to_rules(ngrams_all)
 
 
+def mk_tagger_cmds(lang_data, pair, training_lines):
+    """Make a pipeline for tagging 'training_lines' of corpus with 'pair'."""
+    return [['head', '-n', str(training_lines)],
+            ['apertium-destxt'],
+            ['apertium', '-f', 'none', '-d', lang_data, f"{pair}-tagger"],
+            ['apertium-pretransfer'],
+            ['apertium-cleanstream']]
+
+
 def non_parallel_training(config, cache_dir, log):
 
     # MIN = 1
@@ -356,10 +354,7 @@ def non_parallel_training(config, cache_dir, log):
             training_lines = config['TRAINING_LINES']
 
     print(f"Tagging {training_lines} lines from the source side corpus ...")
-    cmds = [['head', '-n', str(training_lines)],
-            ['apertium', '-d', config['LANG_DATA'],
-             f"{config['SL']}-{config['TL']}-tagger"],
-            ['apertium-pretransfer']]
+    cmds = mk_tagger_cmds(config['LANG_DATA'], config['PAIR'], training_lines)
     with open(config['CORPUS_SL']) as inp, open(sl_tagged, 'w') as outp:
         pipe(cmds, inp, outp, log, training_lines).wait()
 
