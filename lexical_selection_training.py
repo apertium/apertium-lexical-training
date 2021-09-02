@@ -198,35 +198,16 @@ def parallel_training(config, cache_dir, log):
         f.seek(0)
         f.write(data.replace('~~', ' '))
 
-    # temp files
-    tmp1 = 'tmp1'
-    tmp2 = 'tmp2'
-
     print("Processing tagger output and creating phrase table ...")
-    modes = get_modes(config['LANG_DATA'])
-    with open(tmp1, 'w') as f1, open(tmp2, 'w') as f2:
+    with open(sl_tagged, 'r') as f_sl_tagged, open(clean_biltrans, 'w') as f_clean_biltrans:
+        modes = get_modes(config['LANG_DATA'])
         sl_tl_autobil = get_autobil(modes, config['LANG_DATA'], config['PAIR'])
-        tl_sl_autobil = get_autobil(modes, config['LANG_DATA'], config['REVERSE_PAIR'])
-        with open(tl_tagged, 'r') as f:
-            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-            call(['process-tagger-output', tl_sl_autobil],
-                 stdin=f, stdout=f1, stderr=log)
-        with open(sl_tagged, 'r') as f:
-            # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-            call(['process-tagger-output', sl_tl_autobil],
-                 stdin=f, stdout=f2, stderr=log)
-            f.seek(0)
-            with open(clean_biltrans, 'w') as f0:
-                # call([os.path.join(config['LEX_TOOLS'], 'process-tagger-output'),
-                call(['process-tagger-output', sl_tl_autobil],
-                     stdin=f, stdout=f0, stderr=log)
+        cmds = [['process-tagger-output', sl_tl_autobil]]
+        pipe(cmds, f_sl_tagged, f_clean_biltrans, log).wait()
 
-    cmds = [['paste', tmp1, tmp2, alignment], ['sed', 's/\t/ ||| /g']]
     with open(phrasetable, 'w') as f:
+        cmds = [['paste', tl_tagged, sl_tagged, alignment], ['sed', 's/\t/ ||| /g']]
         pipe(cmds, None, f, log).wait()
-
-    os.remove(tmp1)
-    os.remove(tmp2)
 
     print("Turning aligned ngrams into rules ...")
     # extract sentences
