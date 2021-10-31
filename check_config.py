@@ -232,7 +232,7 @@ def check_config(config_filename):
                 if 'IRSTLM' not in os.environ:
                     print(
                         "IRSTLM doesn't seem to be installed to /usr/lib/irstlm,"
-                        + " couldn't find /usr/lib/bin/build-lm.sh (if you installed"
+                        + " couldn't find /usr/lib/irstlm/bin/build-lm.sh (if you installed"
                         + f" it elsewhere, set the environment variable IRSTLM), see {irstlm_url}\n")
                     misconfigured = True
                 else:

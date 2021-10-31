@@ -13,6 +13,6 @@ CORPUS_TL = "tests/training/test.spa"
 
 LANG_DATA = "apertium-eng-spa"
 
-TRAINING_LINES = 10
+TRAINING_LINES = 100
 MAX_RULES = 3
 CRISPHOLD = 1.5
