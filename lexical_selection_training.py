@@ -8,10 +8,16 @@ import shutil
 
 from subprocess import Popen, PIPE, call
 from check_config import check_config, irstlm_path, get_modes, get_autobil, get_mode_after_biltrans
-from clean_corpus import clean_corpus
-from importlib import import_module
 from contextlib import redirect_stdout, redirect_stderr
 from typing import List
+
+from trainrules import extract_sentences
+from trainrules import extract_freq_lexicon
+from trainrules import biltrans_count_patterns_ngrams
+from trainrules import biltrans_extract_frac_freq
+from trainrules import ngrams_to_rules
+from trainrules import ngram_pruning_frac
+from trainrules import ngram_count_patterns
 
 
 def query(question, default="yes"):
@@ -211,28 +217,20 @@ def parallel_training(config, cache_dir, log):
 
     print("Turning aligned ngrams into rules ...")
     # extract sentences
-    mod = import_module('extract-sentences')
-    extract_sentences = getattr(mod, 'extract_sentences')
     with open(candidates, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        extract_sentences(phrasetable, clean_biltrans)
+        extract_sentences.extract_sentences(phrasetable, clean_biltrans)
 
     # extract freq lexicon
-    mod = import_module('extract-freq-lexicon')
-    extract_freq_lexicon = getattr(mod, 'extract_freq_lexicon')
     with open(freq_lex, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        extract_freq_lexicon(candidates)
+        extract_freq_lexicon.extract_freq_lexicon(candidates)
 
     # count patterns
-    mod = import_module('ngram-count-patterns')
-    ngram_count_patterns = getattr(mod, 'ngram_count_patterns')
     with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngram_count_patterns(freq_lex, candidates, config['CRISPHOLD'], config['MAX_RULES'])
+        ngram_count_patterns.ngram_count_patterns(freq_lex, candidates, config['CRISPHOLD'], config['MAX_RULES'])
 
     # ngrams to rules
-    mod = import_module('ngrams-to-rules')
-    ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngrams_to_rules(ngrams, config['CRISPHOLD'])
+        ngrams_to_rules.ngrams_to_rules(ngrams, config['CRISPHOLD'])
     return rules
 
     # # count patterns
@@ -410,28 +408,20 @@ def non_parallel_training(config, cache_dir, log):
 
     print("Turning ranked ngrams into rules ...")
     # extract frac freq
-    mod = import_module('biltrans-extract-frac-freq')
-    extract_frac_freq = getattr(mod, 'biltrans_extract_frac_freq')
     with open(lex_freq, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        extract_frac_freq(ambig, ranked)
+        biltrans_extract_frac_freq.biltrans_extract_frac_freq(ambig, ranked)
 
     # ngrams
-    mod = import_module('biltrans-count-patterns-ngrams')
-    count_patterns_ngrams = getattr(mod, 'biltrans_count_patterns_ngrams')
     with open(ngrams, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        count_patterns_ngrams(ambig, ranked)
+        biltrans_count_patterns_ngrams.biltrans_count_patterns_ngrams(ambig, ranked)
 
     # patterns
-    mod = import_module('ngram-pruning-frac')
-    ngram_pruning_frac = getattr(mod, 'ngram_pruning_frac')
     with open(patterns, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngram_pruning_frac(lex_freq, ngrams)
+        ngram_pruning_frac.ngram_pruning_frac(lex_freq, ngrams)
 
     # extracting rules
-    mod = import_module('ngrams-to-rules')
-    ngrams_to_rules = getattr(mod, 'ngrams_to_rules')
     with open(rules, 'w') as f, redirect_stdout(f), redirect_stderr(log):
-        ngrams_to_rules(patterns, config['CRISPHOLD'])
+        ngrams_to_rules.ngrams_to_rules(patterns, config['CRISPHOLD'])
     return rules
 
 
